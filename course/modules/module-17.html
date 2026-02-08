@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 17: Power BI</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .calculation-box { font-family: monospace; background: #e8f0ff; padding: 12px; border-radius: 6px; margin: 12px 0; border-left: 4px solid #667eea; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 17: Power BI — Data Model, DAX & Visuals</h2>
+
+    <h3>What Is Power BI?</h3>
+    <p><strong>Power BI</strong> connects to databases or files and builds a <strong>data model</strong> (tables, relationships, often a star schema). <strong>Measures</strong> are calculations (e.g. Total Revenue, YoY %) written in <strong>DAX</strong>. Visuals (bar, line, matrix, map) and filters (visual, page, report) drive the report. Use aggregations and RLS for performance and security.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Star schema + measures in DAX + filters define how numbers flow. RLS and aggregations keep reports fast and secure when data grows.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Star schema (one fact, many dimensions)</div>
+        <svg viewBox="0 0 380 100" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <rect x="155" y="35" width="70" height="35" rx="4" fill="#667eea" stroke="#333"/><text x="190" y="55" text-anchor="middle" font-size="11" fill="white">Fact: Sales</text>
+            <rect x="15" y="10" width="65" height="28" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="47" y="28" text-anchor="middle" font-size="10">Product</text>
+            <rect x="15" y="45" width="65" height="28" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="47" y="63" text-anchor="middle" font-size="10">Region</text>
+            <rect x="15" y="80" width="65" height="28" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="47" y="98" text-anchor="middle" font-size="10">Date</text>
+            <rect x="300" y="10" width="65" height="28" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="332" y="28" text-anchor="middle" font-size="10">Customer</text>
+            <rect x="300" y="80" width="65" height="28" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="332" y="98" text-anchor="middle" font-size="10">Store</text>
+            <line x1="80" y1="24" x2="152" y2="48" stroke="#764ba2" stroke-width="1.5"/>
+            <line x1="80" y1="59" x2="152" y2="52" stroke="#764ba2" stroke-width="1.5"/>
+            <line x1="80" y1="94" x2="152" y2="62" stroke="#764ba2" stroke-width="1.5"/>
+            <line x1="228" y1="48" x2="298" y2="24" stroke="#764ba2" stroke-width="1.5"/>
+            <line x1="228" y1="55" x2="298" y2="94" stroke="#764ba2" stroke-width="1.5"/>
+        </svg>
+    </div>
+
+    <h3>Data model and DAX</h3>
+    <p>Star schema: one fact table (e.g. sales) and dimension tables (product, region, date). Relationships define how filters flow. Measures vs. columns: measures aggregate (SUM, COUNT); columns are stored. DAX supports time intelligence (YTD, prior period) and ratios. Example measure:</p>
+    <div class="calculation-box">Revenue YoY % = DIVIDE([Total Revenue] - [Revenue LY], [Revenue LY])</div>
+    <p>Another example: YTD revenue using time intelligence.</p>
+    <div class="code-block">
+        <div class="code-lang">DAX</div>
+        <pre><code>Revenue YTD = TOTALYTD(SUM(Sales[Revenue]), 'Date'[Date])
+Revenue Prior Year = CALCULATE([Total Revenue], SAMEPERIODLASTYEAR('Date'[Date]))</code></pre>
+    </div>
+    <h3>Visuals and dashboards</h3>
+    <p>Choose visuals for the story (bar, line, matrix, map). Use filters (visual, page, report), drill-through, and bookmarks. For performance: reduce columns, use aggregations, consider DirectQuery vs. import. Sharing: workspace, apps; RLS for row-level security.</p>
+
+    <h3>Preparing data for Power BI: Python and R</h3>
+    <p><strong>Process:</strong> Gold or mart data is often imported into Power BI (Get Data → Database or File). You can pre-shape or validate the dataset in Python or R, then export so Power BI imports it. <strong>Components:</strong> source (Gold/mart), transform (filter, aggregate, rename), output (CSV, Parquet, or DB table). <strong>Outcome:</strong> a clean dataset and a repeatable script for refresh.</p>
+    <div class="code-block">
+        <div class="code-lang">Python: build a report-ready table from Gold and save for Power BI import</div>
+        <pre><code>import pandas as pd
+# Read Gold (or mart)
+df = pd.read_parquet("gold/daily_sales_by_region/")
+df = df[df["sale_date"] >= "2025-01-01"]
+# Rename for business labels if needed
+df = df.rename(columns={"revenue": "Revenue", "units_sold": "Units"})
+# Export for Power BI Get Data → File
+df.to_parquet("report_input/sales_for_pbi.parquet", index=False)</code></pre>
+    </div>
+    <div class="code-block">
+        <div class="code-lang">R: same flow for Power BI or Tableau</div>
+        <pre><code>library(arrow); library(dplyr)
+sales <- read_parquet("gold/daily_sales_by_region/") %>%
+  filter(sale_date >= as.Date("2025-01-01")) %>%
+  rename(Revenue = revenue, Units = units_sold)
+arrow::write_parquet(sales, "report_input/sales_for_pbi.parquet")</code></pre>
+    </div>
+
+    <h3>Practical use cases</h3>
+    <div class="example-box">
+        <ul>
+            <li>Sales report: revenue, units, growth %; filters by region, product, date.</li>
+            <li>Executive dashboard: KPIs, trend, top N; export to PDF.</li>
+            <li>Self-serve: parameterized report for “any region”.</li>
+        </ul>
+    </div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Data model: star schema (fact + dimensions); measures in DAX; visuals and filters (visual, page, report).</li>
+            <li>DAX: time intelligence (YTD, prior period), ratios; use aggregations and RLS for performance and security.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Sales report:</strong> Revenue, units, growth %; filters by region, product, date; export to PDF.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 16 linked pipeline to analytics; this module is Power BI–specific. Module 18 is Tableau; Module 19 is the use case (End-to-End Report).</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: In Power BI, what is a measure?</h4>
+            <ul class="quiz-options"><li>A) A visual</li><li>B) A calculation (e.g. SUM) written in DAX that aggregates data</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Measures are DAX expressions that aggregate; they evaluate in context (filters, rows).</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is a star schema in Power BI?</h4>
+            <ul class="quiz-options"><li>A) A single table</li><li>B) One fact table (e.g. sales) and dimension tables (product, region, date) with relationships</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Star schema is the common model pattern for BI—facts and dimensions.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is RLS in Power BI?</h4>
+            <ul class="quiz-options"><li>A) A visual type</li><li>B) Row-level security—restrict which rows a user sees based on role</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> RLS filters data by role so users only see allowed rows.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: When would you use DirectQuery vs. Import?</h4>
+            <ul class="quiz-options"><li>A) Always Import</li><li>B) Import for speed and offline; DirectQuery when data is large or must be live</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Import caches data; DirectQuery queries source on demand—trade-off between speed and freshness/size.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What does DAX time intelligence do?</h4>
+            <ul class="quiz-options"><li>A) Only renames columns</li><li>B) Provides calculations like YTD, prior period, same period last year</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Time intelligence in DAX supports period-over-period and YTD analysis.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

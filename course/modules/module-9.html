@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 9: Use Case — Medallion in Practice</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .worked-example { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .worked-example h4 { color: #764ba2; margin-top: 0; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <h2>Module 9: Use Case — Medallion in Practice</h2>
+
+    <h3>What This Use Case Covers</h3>
+    <p>Start from the Section 2 use case (landed sales data and one API). Build <strong>Bronze</strong> (raw copy), <strong>Silver</strong> (cleaned, joined, deduplicated), and <strong>Gold</strong> (e.g. daily sales by product and region). Use any tool (SQL, dbt, Spark, ADF, etc.). Document lineage and incremental strategy. Generic medallion patterns only.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Bronze is a raw copy of what you landed; Silver is where business rules and joins live; Gold is what dashboards query. Documenting lineage (Landing → Bronze → Silver → Gold) and how each layer is refreshed (full vs. incremental) makes the pipeline understandable and maintainable.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Lineage: Landing → Bronze → Silver → Gold</div>
+        <svg viewBox="0 0 520 85" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr9" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="5" y="22" width="85" height="40" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="47" y="45" text-anchor="middle" font-size="10">Landing</text><text x="47" y="58" text-anchor="middle" font-size="9" fill="#666">CSV + API</text>
+            <line x1="90" y1="42" x2="118" y2="42" stroke="#667eea" marker-end="url(#arr9)"/>
+            <rect x="118" y="22" width="75" height="40" rx="4" fill="#cd7f32" stroke="#8B4513"/><text x="155" y="45" text-anchor="middle" font-size="10" fill="white">Bronze</text>
+            <line x1="193" y1="42" x2="221" y2="42" stroke="#667eea" marker-end="url(#arr9)"/>
+            <rect x="221" y="22" width="75" height="40" rx="4" fill="#C0C0C0" stroke="#808080"/><text x="258" y="45" text-anchor="middle" font-size="10" fill="#333">Silver</text>
+            <line x1="296" y1="42" x2="324" y2="42" stroke="#667eea" marker-end="url(#arr9)"/>
+            <rect x="324" y="22" width="75" height="40" rx="4" fill="#FFD700" stroke="#B8860B"/><text x="361" y="45" text-anchor="middle" font-size="10" fill="#333">Gold</text>
+            <line x1="399" y1="42" x2="427" y2="42" stroke="#667eea" marker-end="url(#arr9)"/>
+            <rect x="427" y="22" width="88" height="40" rx="4" fill="#d4edda" stroke="#28a745"/><text x="471" y="45" text-anchor="middle" font-size="10">Report</text>
+        </svg>
+    </div>
+
+    <h3>Scenario in detail</h3>
+    <p>You already have data in a landing zone from Module 6: (1) a CSV (e.g. sales) and (2) an API response (e.g. product or region lookup). Use that as the input. <strong>Bronze:</strong> Copy the landed data into Bronze tables (or files) with minimal change—e.g. add ingestion timestamp and source name. One Bronze table or partition per source. <strong>Silver:</strong> Clean the data (types, nulls, standardize names), deduplicate by a business key (e.g. order_id or composite key), and join the two sources if they relate (e.g. sales to product). Output one or more Silver tables with a clear grain (e.g. one row per order line). <strong>Gold:</strong> Aggregate to business metrics—e.g. daily sales by product and region (SUM revenue, COUNT orders). This is the table that a report or dashboard would use. Document the flow: which tables feed which, and what the incremental strategy is for Silver and Gold (e.g. key columns, watermark column).</p>
+
+    <h3>Concrete code: Silver (clean, dedup, join)</h3>
+    <p>Assume Bronze has <code>bronze.sales_raw</code> (from CSV) and <code>bronze.products_raw</code> (from API). Silver cleans both, dedupes by key, then joins sales to product so each line has product name and region. Grain: one row per sale line.</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (Silver sales + product)</div>
+        <pre><code>-- Silver: clean sales, dedup by sale_id, join to product
+WITH sales_clean AS (
+  SELECT sale_id, product_id, region_id, amount, sale_date,
+         ROW_NUMBER() OVER (PARTITION BY sale_id ORDER BY _ingested_at DESC) AS rn
+  FROM bronze.sales_raw
+  WHERE sale_id IS NOT NULL AND product_id IS NOT NULL AND amount >= 0
+),
+products_clean AS (
+  SELECT product_id, product_name, category,
+         ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY _ingested_at DESC) AS rn
+  FROM bronze.products_raw
+  WHERE product_id IS NOT NULL
+)
+INSERT INTO silver.sales_enriched
+SELECT s.sale_id, s.product_id, s.region_id, s.amount, s.sale_date,
+       p.product_name, p.category
+FROM (SELECT * FROM sales_clean WHERE rn = 1) s
+LEFT JOIN (SELECT * FROM products_clean WHERE rn = 1) p ON s.product_id = p.product_id;</code></pre>
+    </div>
+    <p>Incremental strategy: add <code>WHERE s._ingested_at > :watermark</code> (and use merge by <code>sale_id</code>) if you process only new Bronze rows. Otherwise full refresh each run.</p>
+
+    <h3>Concrete code: Gold (daily sales by product and region)</h3>
+    <p>Gold reads from <code>silver.sales_enriched</code> and aggregates to one row per (date, product_id, region_id) for reporting.</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (Gold aggregate)</div>
+        <pre><code>-- Gold: daily sales by product and region
+INSERT INTO gold.daily_sales_by_product_region
+SELECT
+  DATE(sale_date) AS sale_date,
+  product_id,
+  product_name,
+  region_id,
+  SUM(amount) AS revenue,
+  COUNT(DISTINCT sale_id) AS order_count
+FROM silver.sales_enriched
+WHERE sale_date >= :watermark_date   -- incremental: only new dates
+GROUP BY DATE(sale_date), product_id, product_name, region_id;</code></pre>
+    </div>
+    <p>Run daily; <code>:watermark_date</code> can be <code>MAX(sale_date)</code> from Gold, or "yesterday". For full refresh, omit the filter and truncate Gold first.</p>
+
+    <h3>Lineage and incremental strategy (documentation)</h3>
+    <p>Document which tables feed which and how each is refreshed. Example table:</p>
+    <div class="step-box">
+        <table>
+            <tr><th>Table</th><th>Source</th><th>Strategy</th><th>Key / watermark</th></tr>
+            <tr><td>bronze.sales_raw</td><td>landing/sales/*.csv</td><td>Append by run</td><td>_ingested_at</td></tr>
+            <tr><td>bronze.products_raw</td><td>landing/api_products/*.json</td><td>Append by run</td><td>_ingested_at</td></tr>
+            <tr><td>silver.sales_enriched</td><td>Bronze sales + products</td><td>Full refresh or merge</td><td>sale_id; watermark: _ingested_at</td></tr>
+            <tr><td>gold.daily_sales_by_product_region</td><td>silver.sales_enriched</td><td>Incremental by date</td><td>sale_date, product_id, region_id; watermark: sale_date</td></tr>
+        </table>
+    </div>
+    <p>This gives engineers and analysts a single place to see the flow and how to backfill or add a new source.</p>
+
+    <div class="worked-example">
+        <h4>Example: Bronze copy from landing (dbt-style SQL)</h4>
+        <p>Bronze is a direct copy from landing with optional ingestion metadata.</p>
+        <div class="code-block">
+            <div class="code-lang">SQL (e.g. dbt model)</div>
+            <pre><code>-- bronze_sales: raw copy from landing
+{{ config(materialized='incremental', unique_key='_row_id') }}
+SELECT
+  *,
+  current_timestamp() AS _ingested_at
+FROM {{ source('landing', 'sales_csv') }}
+{% if is_incremental() %}
+WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
+{% endif %}</code></pre>
+        </div>
+        <p>In practice you might read from a path (e.g. <code>landing/sales/*.parquet</code>) and add <code>_file_name</code>, <code>_ingested_at</code>. Silver then reads from Bronze and applies clean + dedup.</p>
+    </div>
+
+    <h3>Deliverables</h3>
+    <div class="example-box">
+        <ul>
+            <li><strong>Code or config</strong> for each layer: Bronze (copy from landing), Silver (clean, dedup, join), Gold (aggregate). Include DDL or schema and a short comment per step.</li>
+            <li><strong>Lineage diagram</strong>: sources → landing → Bronze → Silver → Gold (boxes and arrows, with table or file names).</li>
+            <li><strong>Short note on incremental strategy</strong>: For Silver and Gold, state the key column(s) and watermark column (e.g. updated_at) if you process incrementally, or note "full refresh" if you replace the table each run.</li>
+        </ul>
+    </div>
+
+    <h3>By role</h3>
+    <div class="step-box">
+        <p><strong>Architect:</strong> Produce a "medallion standards" one-pager: naming convention (e.g. bronze_*, silver_*, gold_*), partitioning (e.g. by date), retention (e.g. Bronze 90 days), and when to add a layer. Review one team's Bronze/Silver/Gold design for governance (ownership, lineage) and scalability.</p>
+        <p><strong>Engineer:</strong> Build the full medallion (Bronze → Silver → Gold). Include at least one incremental Silver or Gold model (e.g. merge by key and watermark). Add a simple lineage artifact (e.g. dbt docs, or a markdown table listing sources and targets).</p>
+        <p><strong>Analyst:</strong> Map "report columns" back to Bronze/Silver/Gold (which layer and table each column comes from). Write one business rule that should be enforced in Silver or Gold (e.g. "revenue ≥ 0", "product_id must exist in product dimension") and how you would verify it in a report (e.g. filter to revenue < 0 and expect zero rows).</p>
+    </div>
+
+    <div class="success-box"><strong>Interactive wrap-up:</strong> Present your Bronze→Silver→Gold to a partner. They ask one "what if" (e.g. new column in source, new source, change in grain)—you outline the change (which layer to update, what to add or modify).</div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Build Bronze (raw copy), Silver (clean, join, dedup), Gold (aggregates/marts) from landed data.</li>
+            <li>Document lineage and incremental strategy (which tables are full refresh vs. watermark-based).</li>
+            <li>Silver: one layer per entity or topic; Gold: business KPIs and reporting tables.</li>
+            <li>Use any tool (SQL, dbt, Spark, ADF); keep patterns vendor-agnostic.</li>
+            <li>Lineage helps debugging and governance; incremental reduces cost and latency.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Sales analytics:</strong> Bronze = landed CSVs + API; Silver = clean sales + product; Gold = daily by region.</li>
+        <li><strong>Customer 360:</strong> Bronze = raw CRM/support; Silver = deduped customer; Gold = segments and KPIs.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Section 4 (Modules 10–12) adds validation, quality checks, and data dictionaries on top of this medallion.</div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: In this use case, what does the Silver layer contain?</h4>
+            <ul class="quiz-options"><li>A) Only raw JSON</li><li>B) Cleaned, deduplicated, and joined data—one integrated layer per entity</li><li>C) Only aggregates</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Silver is cleaned and integrated; Bronze is raw, Gold is aggregates.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: Why document lineage for this use case?</h4>
+            <ul class="quiz-options"><li>A) To make the pipeline slower</li><li>B) So others can trace data from source to report and debug or extend the pipeline</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Lineage supports governance, debugging, and onboarding.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is the purpose of the Gold layer in this scenario?</h4>
+            <ul class="quiz-options"><li>A) Store raw API responses</li><li>B) Hold business-level aggregates (e.g. daily sales by product and region) for reporting</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Gold is for KPIs and marts that reports consume.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: When adding a new source to an existing medallion, what do you typically add?</h4>
+            <ul class="quiz-options"><li>A) Only a new Gold table</li><li>B) New Bronze and Silver tables; reuse or extend Gold logic where it makes sense</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> New source → new Bronze + Silver; Gold can often be extended with the new Silver.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What should the "incremental strategy" note describe?</h4>
+            <ul class="quiz-options"><li>A) Only the tool name</li><li>B) Key column(s) and watermark column for merge, or that the table is full refresh</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> The strategy tells others how the table is updated (incremental vs. full) and on what key.</div>
+        </div>
+    </div>
+
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

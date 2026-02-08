@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 2: Why Pipelines Matter & Roles</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .plain-terms strong { color: #764ba2; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .worked-example { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .worked-example h4 { color: #764ba2; margin-top: 0; }
+        .demo-box { background: #e8f4f8; border: 1px solid #667eea; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .demo-box summary { cursor: pointer; font-weight: bold; color: #667eea; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 2: Why Data Pipelines Matter & Roles</h2>
+
+    <h3>Why Do Pipelines Matter?</h3>
+    <p>Bad or late data leads to wrong decisions and lost trust. Pipelines automate the flow so that the right data is available when needed—with consistent quality and a <strong>single source of truth</strong>. Different roles own different parts: <strong>data engineers</strong> build and run pipelines; <strong>analysts</strong> consume data for reports and validate numbers; <strong>technical architects</strong> define standards, storage choices, and governance.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> When everyone uses the same pipeline output, "which number is correct?" goes away. Governance, lineage, and auditability depend on having one place that produces certified data—and clear ownership when something breaks.
+    </div>
+
+    <h3>Why pipelines matter (in detail)</h3>
+    <h4>Cost of bad data</h4>
+    <p>Manual merges (e.g. copying CSV exports into Excel and using VLOOKUPs) and ad hoc scripts lead to errors, duplicates, and conflicting numbers. Different people may use different filters or definitions, so "revenue" in one report does not match "revenue" in another. Pipelines enforce rules in one place and make outcomes repeatable: the same run produces the same result. When something goes wrong, you fix the pipeline once instead of correcting every spreadsheet.</p>
+    <h4>Speed of insight</h4>
+    <p>Automated pipelines can run on a schedule (e.g. daily at 6 a.m.) or near real-time. Reports and models stay current without someone manually refreshing files. Reducing the time from "data available" to "decision made" is a direct benefit of pipeline automation.</p>
+    <h4>Single source of truth</h4>
+    <p>One pipeline producing one authoritative dataset (or set of tables) avoids "which spreadsheet is correct?" and supports governance and audit. You can document lineage (where the numbers came from), apply access control, and certify datasets for company-wide reporting. Compliance and auditability depend on having a clear, traceable source.</p>
+    <h4>ROI of automation</h4>
+    <p>Return on investment comes from: less manual work (hours saved per week), fewer errors (and the cost of correcting them), faster time-to-insight, and the ability to scale analytics and self-serve (more people can use the same trusted data without each building their own merge). Data quality and trust increase when logic is centralized and tested.</p>
+
+    <h3>Governance and lineage</h3>
+    <p><strong>Governance</strong> means defining who can use which data, how it is certified, and what policies apply (e.g. PII handling, retention). <strong>Lineage</strong> is the record of where data came from and how it was transformed—from source tables and columns to final reports. Pipelines that are documented and instrumented support both: you can trace a report cell back to a source and a run, and you can enforce access and quality rules along the way.</p>
+
+    <h3>Roles and responsibilities</h3>
+    <div class="diagram-box">
+        <div class="diagram-title">Who touches the pipeline (handoffs)</div>
+        <svg viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="m2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="20" y="50" width="100" height="40" rx="6" fill="#e8f4f8" stroke="#667eea"/>
+            <text x="70" y="75" text-anchor="middle" font-size="11" fill="#333">Architect</text>
+            <text x="70" y="95" text-anchor="middle" font-size="9" fill="#666">Design, standards</text>
+            <line x1="120" y1="70" x2="155" y2="70" stroke="#667eea" stroke-width="1.5" marker-end="url(#m2)"/>
+            <rect x="155" y="30" width="170" height="80" rx="6" fill="#f0f7ff" stroke="#764ba2" stroke-width="2"/>
+            <text x="240" y="55" text-anchor="middle" font-size="12" fill="#333">Pipeline</text>
+            <text x="240" y="75" text-anchor="middle" font-size="10" fill="#666">Ingest → Transform → Store → Serve</text>
+            <text x="240" y="95" text-anchor="middle" font-size="9" fill="#666">(Engineer builds &amp; runs)</text>
+            <line x1="325" y1="70" x2="360" y2="70" stroke="#667eea" stroke-width="1.5" marker-end="url(#m2)"/>
+            <rect x="360" y="50" width="100" height="40" rx="6" fill="#d4edda" stroke="#28a745"/>
+            <text x="410" y="75" text-anchor="middle" font-size="11" fill="#333">Analyst</text>
+            <text x="410" y="95" text-anchor="middle" font-size="9" fill="#666">Reports, validation</text>
+            <rect x="195" y="115" width="90" height="28" rx="4" fill="#fff3cd" stroke="#ffc107"/>
+            <text x="240" y="133" text-anchor="middle" font-size="10" fill="#333">Engineer: code, runs, alerts</text>
+        </svg>
+    </div>
+    <div class="step-box">
+        <table>
+            <tr><th>Role</th><th>Focus</th></tr>
+            <tr><td><strong>Data engineer</strong></td><td>Implement and run pipelines: ingestion, transformation, loading; orchestration (scheduling, dependencies); testing (unit, integration, data quality); reliability (retries, alerting); performance (partitioning, incremental loads). Engineers own the code and config and are the first line when a pipeline fails.</td></tr>
+            <tr><td><strong>Analyst</strong></td><td>Consume data for reports and dashboards; define business requirements (what metrics, what grain, what filters); validate numbers and raise issues when something looks wrong; use self-serve datasets and semantic layers where available. Analysts depend on pipeline outputs and often drive requests for new data or changes.</td></tr>
+            <tr><td><strong>Technical architect</strong></td><td>Design patterns (e.g. medallion layers, storage choices); standards (naming, partitioning, retention); governance (ownership, SLAs, certification); scalability and technology selection. Architects ensure the overall design supports current and future use cases and that handoffs between teams are clear.</td></tr>
+        </table>
+    </div>
+    <p><strong>Handoffs matter:</strong> When the analyst says "the numbers are wrong," the engineer checks pipeline runs (did it succeed?), source schema (did it change?), and transforms (is the logic correct?). The architect ensures the design supports SLAs (e.g. freshness) and lineage so that such debugging is possible. Clear ownership avoids gaps when something fails—everyone knows who to call.</p>
+
+    <div class="worked-example">
+        <h4>Example: What the engineer checks first when "numbers are wrong"</h4>
+        <p>A practical checklist (order matters):</p>
+        <div class="code-block">
+            <div class="code-lang">Debugging checklist (pseudocode)</div>
+            <pre><code>1. Pipeline run status  → Did last run succeed? Check logs.
+2. Source schema        → Did a column get added/removed/renamed?
+3. Source data          → Sample source: any nulls, duplicates, new codes?
+4. Transform logic      → Did a filter or join change? Compare row counts.
+5. Output schema        → Does the report expect different columns?
+6. Lineage              → Trace the report metric back to source column.</code></pre>
+        </div>
+    </div>
+
+    <div class="demo-box">
+        <details>
+            <summary>Role-play: You are the engineer; the analyst says "revenue is 20% low this week." What do you ask?</summary>
+            <p><strong>Example:</strong> (1) "Which report and which date range?" (2) "Did the pipeline run for that period?" (3) "Can you point to the exact number?" Then check: run success, source row count for that period, any new filters or logic in the transform. Often the issue is a filter (e.g. region) or a missing partition, not the pipeline itself.</p>
+        </details>
+    </div>
+
+    <h3>Platform vs. pipeline ownership</h3>
+    <p><strong>Platform teams</strong> often own the data warehouse, data lake, and shared tooling (orchestration, CI/CD). They provide the infrastructure and standards. <strong>Pipeline owners</strong> (often data engineers in a domain or product team) own specific ingestion and transformation jobs: they develop, test, and maintain the pipelines that feed their area. Clear boundaries—who owns the schedule, who owns the schema change, who owns the alert—avoid gaps when something fails. SLA and monitoring expectations should be agreed up front (e.g. "pipeline runs by 7 a.m.; if it fails, page the on-call engineer").</p>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Bad or late data causes wrong decisions; pipelines provide consistent, timely data and a single source of truth.</li>
+            <li>Governance and lineage support audit, compliance, and debugging (trace report → source).</li>
+            <li>Engineer: build and run pipelines; Analyst: consume and validate; Architect: design and standards.</li>
+            <li>When "numbers are wrong," check run status, source schema, and transform logic first.</li>
+            <li>Platform owns infrastructure; pipeline owners own specific jobs—agree SLAs and alerts up front.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Finance:</strong> One certified revenue pipeline so regulatory and internal reports use the same numbers.</li>
+        <li><strong>Product:</strong> Engineer owns event ingestion; analyst owns dashboards; architect owns lake schema.</li>
+        <li><strong>Marketing:</strong> Single attribution dataset with clear lineage for campaign and channel reporting.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Relationship to other modules:</strong> Module 1 defined the pipeline; this one explains why it matters and who does what. Module 3 is the first use case (From Spreadsheets to Pipeline). Role-specific callouts and activities appear in later sections (see COURSE-PLAN.md).
+    </div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: Who typically owns implementing and running the pipeline?</h4>
+            <ul class="quiz-options">
+                <li>A) Analyst</li>
+                <li>B) Data engineer</li>
+                <li>C) Technical architect</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B — Data engineer.</strong> Engineers build, test, and operate pipelines; architects design patterns and standards; analysts consume data and validate numbers.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is a key benefit of a single source of truth?</h4>
+            <ul class="quiz-options">
+                <li>A) Fewer tools</li>
+                <li>B) One pipeline producing one dataset avoids conflicting numbers and supports governance and audit</li>
+                <li>C) Cheaper storage</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Single source of truth reduces conflicting reports, supports audit and compliance, and makes lineage and certification possible.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is data lineage used for?</h4>
+            <ul class="quiz-options">
+                <li>A) Storing raw data</li>
+                <li>B) Recording where data came from and how it was transformed, for traceability and debugging</li>
+                <li>C) Scheduling pipelines</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Lineage traces data from source to report so you can debug issues and support governance and audit.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: When an analyst says "the numbers are wrong," what should the data engineer check first?</h4>
+            <ul class="quiz-options">
+                <li>A) Only the report design</li>
+                <li>B) Pipeline runs (did it succeed?), source schema (did it change?), and transform logic</li>
+                <li>C) Who requested the report</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> The engineer checks whether the pipeline ran successfully, whether the source schema changed, and whether the transform logic is correct.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What is the typical responsibility of a platform team vs. a pipeline owner?</h4>
+            <ul class="quiz-options">
+                <li>A) Platform owns warehouse/lake and tooling; pipeline owners own specific ingestion and transformation jobs</li>
+                <li>B) They do the same work</li>
+                <li>C) Only platform teams write code</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: A.</strong> Platform provides infrastructure and standards; pipeline owners develop and maintain the pipelines that feed their domain.</div>
+        </div>
+    </div>
+
+    <script>
+        function showAnswer(n) {
+            var a = document.getElementById('answer-' + n);
+            var b = document.getElementById('btn-' + n);
+            if (a && b) { a.classList.add('show'); b.disabled = true; b.textContent = 'Answer Revealed'; }
+        }
+    </script>
+    <script>
+    (function() {
+        function sendHeight() {
+            try {
+                var body = document.body, html = document.documentElement;
+                var h = Math.max(body.scrollHeight, body.offsetHeight, html.scrollHeight, html.offsetHeight, html.clientHeight || 0);
+                if (h <= 0) return;
+                var path = window.location.pathname || window.location.href || '';
+                var m = path.match(/module-(\d+)\.html/);
+                if (m) window.parent.postMessage({ type: 'setIframeHeight', height: h, moduleId: parseInt(m[1], 10) }, '*');
+            } catch (e) {}
+        }
+        sendHeight();
+        setTimeout(sendHeight, 100);
+        setTimeout(sendHeight, 400);
+        setTimeout(sendHeight, 1000);
+    })();
+    </script>
+</body>
+</html>

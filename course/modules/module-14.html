@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 14: Warehouses, Lakes, Marts & Cubes</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .code-block { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+        .code-lang { background: #333; color: #9cdcfe; padding: 8px 12px; font-size: 0.9em; }
+        .code-block pre { margin: 0; padding: 16px; overflow-x: auto; }
+        .code-block code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 14: Warehouses, Lakes, Marts & Cubes</h2>
+
+    <h3>What Are Warehouses, Lakes, Marts, and Cubes?</h3>
+    <p>Modern <strong>warehouses</strong> (cloud-native, managed) and <strong>lakes</strong> (object storage + query engines or lakehouse) are where Bronze/Silver/Gold often live. <strong>Partitioning</strong> (e.g. by date) and <strong>clustering</strong> improve query performance and cost. <strong>Marts</strong> are built from Gold (or Silver) for a specific audience; <strong>cubes</strong> (or semantic layers) pre-aggregate dimensions and measures for fast dashboards.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Partition by date for incremental loads and partition pruning; cluster for common filters. Build a mart when a team needs a dedicated view; add a cube when dashboard latency or concurrency demands it.
+    </div>
+
+    <h3>Data storage methods: formats and when to use them</h3>
+    <p>Where and how you store data determines cost, speed, and who can query it. <strong>Components</strong>: (1) storage backend (object store vs. warehouse), (2) file format (Parquet, Delta, CSV, JSON), (3) partition layout (e.g. by date), (4) catalog (for discovery and SQL).</p>
+    <table>
+        <tr><th>Format</th><th>Typical use</th><th>Pros</th><th>Cons</th></tr>
+        <tr><td><strong>Parquet</strong></td><td>Silver/Gold in lake; analytics</td><td>Columnar, compressed, schema embedded; fast column scans</td><td>Not human-readable; append/update needs care</td></tr>
+        <tr><td><strong>Delta / Iceberg</strong></td><td>Lakehouse; ACID, upserts</td><td>ACID, time travel, merge; table semantics on files</td><td>More complex; requires compatible engine</td></tr>
+        <tr><td><strong>CSV</strong></td><td>Landing, exports, small datasets</td><td>Universal, human-readable</td><td>No schema; slow for large scans; type ambiguity</td></tr>
+        <tr><td><strong>JSON</strong></td><td>Bronze (raw API/logs); semi-structured</td><td>Flexible schema; good for nested data</td><td>Verbose; slower for analytical queries</td></tr>
+    </table>
+    <p><strong>Process:</strong> Data is written to a path (e.g. <code>s3://bucket/silver/sales/year=2025/month=02/</code>). A catalog registers the table so SQL engines can filter by partition. <strong>Outcome:</strong> partition pruning, lower cost, faster queries.</p>
+
+    <h3>Warehouses and lakes in detail</h3>
+    <p>Bronze is often in object storage (files); Silver and Gold in a warehouse or lakehouse. Use partitioning (e.g. by date) for incremental loads and partition pruning. Compression and access control (encryption, RBAC) apply to both.</p>
+
+    <h4>Python: write and read Parquet (lake-style)</h4>
+    <p>Write Parquet with a date-partitioned folder layout so downstream engines can prune partitions.</p>
+    <div class="code-block">
+        <div class="code-lang">Python (pandas + pyarrow): write partitioned Parquet</div>
+        <pre><code>import pandas as pd
+df = pd.DataFrame({"sale_date": ["2025-02-01", "2025-02-01"], "product_id": [101, 102], "revenue": [100.0, 250.0]})
+df["sale_date"] = pd.to_datetime(df["sale_date"])
+base_path = "/data/silver/sales"  # or s3://bucket/silver/sales
+df.to_parquet(base_path, engine="pyarrow", partition_cols=["sale_date"], index=False)
+# Read one partition only:
+df_subset = pd.read_parquet(base_path, filters=[("sale_date", "==", "2025-02-01")])</code></pre>
+    </div>
+
+    <h4>R: read and write Parquet</h4>
+    <p>R analysts read from the same storage pipelines produce. The <code>arrow</code> package supports partition pruning.</p>
+    <div class="code-block">
+        <div class="code-lang">R (arrow): read Parquet; filter at read time</div>
+        <pre><code>library(arrow)
+ds <- open_dataset("/data/silver/sales")
+tbl <- ds %>% filter(sale_date == as.Date("2025-02-01")) %>% collect()
+write_parquet(mart_sales_df, "s3://bucket/mart/sales_snapshot.parquet")</code></pre>
+    </div>
+
+    <h4>Warehouse: partitioning and clustering (SQL)</h4>
+    <p>In a warehouse, define partition and cluster keys; the engine prunes when you filter. <strong>Outcome:</strong> faster queries, lower compute.</p>
+    <div class="code-block">
+        <div class="code-lang">SQL: partitioned and clustered table</div>
+        <pre><code>CREATE TABLE gold.daily_sales (
+  sale_date DATE, product_id INT, region_id INT, revenue DECIMAL(18,2), units_sold INT
+) PARTITION BY (sale_date) CLUSTER BY (region_id, product_id);
+SELECT region_id, SUM(revenue) FROM gold.daily_sales
+WHERE sale_date BETWEEN '2025-02-01' AND '2025-02-07' GROUP BY region_id;</code></pre>
+    </div>
+
+    <h3>Data marts and cubes: what they are physically</h3>
+    <p><strong>Mart:</strong> A subset of tables or views from Gold/Silver for one domain (e.g. Sales mart: fact_sales, dim_product, dim_region). <strong>Cube:</strong> Pre-aggregated dimensions and measures for fast BI; tools include Analysis Services, Looker semantic layer, Power BI datasets, Tableau data model. <strong>Process:</strong> Gold is aggregated into mart tables/views; cube defines dimensions and measures. <strong>Outcome:</strong> consistent definitions, sub-second dashboards, less warehouse load.</p>
+    <div class="step-box">
+        <p><strong>Mart example (SQL):</strong> View from Gold for the sales team.</p>
+        <pre><code>CREATE VIEW mart_sales.sales_by_region AS
+SELECT sale_date, region_id, product_id, SUM(revenue) AS revenue, SUM(units_sold) AS units
+FROM gold.daily_sales GROUP BY sale_date, region_id, product_id;</code></pre>
+    </div>
+    <p>Build a mart when a team needs a dedicated view; add a cube when dashboard latency or concurrency demands it.</p>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Bronze often in object storage; Silver/Gold in warehouse or lakehouse; partition by date, use clustering.</li>
+            <li>Mart = subset for one domain/team; cube = dimensions + measures for fast, concurrent dashboards.</li>
+            <li>Storage formats: Parquet/Delta for analytics; CSV/JSON for landing; use Python (pandas/pyarrow) or R (arrow) to read/write with partition pruning.</li>
+            <li>Partitioning enables incremental loads and partition pruning; compression and RBAC for governance.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Sales team:</strong> Mart from Gold (sales, product, region); cube for exec revenue dashboard.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 13 introduced storage types; this one deepens implementation. Module 15 is the use case (Storage Strategy). Section 6 (Modules 16–19) connects storage to Power BI and Tableau.</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: Why partition a table by date?</h4>
+            <ul class="quiz-options"><li>A) To reduce storage</li><li>B) To support incremental loads and partition pruning (faster, cheaper queries)</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Partitioning by date lets you read/write only relevant partitions and skip others.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is clustering used for?</h4>
+            <ul class="quiz-options"><li>A) Encrypting data</li><li>B) Ordering data within a partition for better range and join performance</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Clustering improves query performance by organizing data by key columns.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: When should you build a data mart?</h4>
+            <ul class="quiz-options"><li>A) Never</li><li>B) When a team needs a dedicated, simplified view for a domain</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Marts simplify access and ownership for a specific audience.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: When should you add a cube or semantic layer?</h4>
+            <ul class="quiz-options"><li>A) Only for raw data</li><li>B) When dashboard latency or concurrency demands sub-second response</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Cubes pre-aggregate for fast BI.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: Where do Silver and Gold typically live?</h4>
+            <ul class="quiz-options"><li>A) Only in object storage</li><li>B) In a warehouse or lakehouse so they can be queried with SQL</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Silver and Gold need SQL and performance; warehouse or lakehouse provides that.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

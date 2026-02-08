@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 13: Storage Types & Trade-offs</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 13: Storage Types & Trade-offs</h2>
+
+    <h3>What Are the Main Storage Types?</h3>
+    <p>Where you store data depends on how it will be used. A <strong>data warehouse</strong> is structured, SQL-friendly, for reporting and analytics. A <strong>data lake</strong> holds files at scale (raw events, diverse formats). A <strong>data mart</strong> is a subset for one team or use case. A <strong>cube</strong> (or semantic layer) is pre-aggregated for fast BI. A <strong>lakehouse</strong> combines lake scale with warehouse-style tables and ACID.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Warehouse for curated SQL and reporting; lake for raw and ML; mart for a team subset; cube for fast dashboards. Lakehouse gives you both—cheap storage and SQL/ACID—so Bronze can live in the lake and Silver/Gold be queried like a warehouse.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Storage landscape: where data lives</div>
+        <svg viewBox="0 0 480 95" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <rect x="10" y="15" width="110" height="38" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="65" y="35" text-anchor="middle" font-size="11">Warehouse</text><text x="65" y="48" text-anchor="middle" font-size="9" fill="#666">SQL, reporting</text>
+            <rect x="130" y="15" width="110" height="38" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="185" y="35" text-anchor="middle" font-size="11">Lake</text><text x="185" y="48" text-anchor="middle" font-size="9" fill="#666">raw, files, ML</text>
+            <rect x="250" y="15" width="110" height="38" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="305" y="35" text-anchor="middle" font-size="11">Mart</text><text x="305" y="48" text-anchor="middle" font-size="9" fill="#666">team subset</text>
+            <rect x="370" y="15" width="105" height="38" rx="4" fill="#d4edda" stroke="#28a745"/><text x="422" y="35" text-anchor="middle" font-size="11">Cube</text><text x="422" y="48" text-anchor="middle" font-size="9" fill="#666">fast BI</text>
+            <text x="65" y="78" text-anchor="middle" font-size="9" fill="#666">curated tables</text>
+            <text x="185" y="78" text-anchor="middle" font-size="9" fill="#666">Parquet, JSON</text>
+            <text x="305" y="78" text-anchor="middle" font-size="9" fill="#666">subject-area</text>
+            <text x="422" y="78" text-anchor="middle" font-size="9" fill="#666">pre-aggregated</text>
+            <rect x="175" y="55" width="130" height="28" rx="4" fill="#f0f7ff" stroke="#764ba2" stroke-dasharray="4"/><text x="240" y="73" text-anchor="middle" font-size="10">Lakehouse = Lake + tables + ACID</text>
+        </svg>
+    </div>
+
+    <h3>When to use which</h3>
+    <div class="step-box">
+        <table>
+            <tr><th>Storage</th><th>Typical use</th></tr>
+            <tr><td>Warehouse</td><td>Reporting, ad hoc SQL, curated tables</td></tr>
+            <tr><td>Lake</td><td>Raw events, ML features, archival, diverse formats</td></tr>
+            <tr><td>Mart</td><td>Subject-area subset (e.g. “Marketing performance”, “Supply chain”)</td></tr>
+            <tr><td>Cube</td><td>Executive dashboards, sub-second response, drill-down</td></tr>
+        </table>
+    </div>
+
+    <h3>Reading and writing formats: Python and R</h3>
+    <p><strong>Process:</strong> Data lands in a format (CSV, JSON, Parquet); you choose format by use case (landing = CSV/JSON, analytics = Parquet). <strong>Components:</strong> file or table, schema (explicit or inferred), and optional partitioning. <strong>Outcome:</strong> correct types, smaller size (Parquet), and partition pruning when applicable.</p>
+    <div class="code-block">
+        <div class="code-lang">Python: read CSV (landing), write Parquet (Silver)</div>
+        <pre><code>import pandas as pd
+# Landing: read CSV as-is
+df = pd.read_csv("landing/sales_2025-02-01.csv")
+# Infer or set types before writing to Silver
+df["sale_date"] = pd.to_datetime(df["sale_date"])
+df["revenue"] = pd.to_numeric(df["revenue"], errors="coerce")
+# Write analytics-ready Parquet (columnar, compressed)
+df.to_parquet("silver/sales.parquet", index=False)</code></pre>
+    </div>
+    <div class="code-block">
+        <div class="code-lang">Python: read JSON (e.g. API payload in Bronze)</div>
+        <pre><code># Nested JSON from API or logs
+with open("bronze/events.json") as f:
+    df = pd.read_json(f)
+# Flatten if needed: pd.json_normalize(records)</code></pre>
+    </div>
+    <div class="code-block">
+        <div class="code-lang">R: read CSV and Parquet; compare size</div>
+        <pre><code>library(readr)
+library(arrow)
+# Landing: CSV
+sales_csv <- read_csv("landing/sales_2025-02-01.csv")
+# Silver: Parquet (smaller, faster for column scans)
+sales_pq <- read_parquet("silver/sales.parquet")
+# Same data in Parquet is typically 5–10x smaller than CSV</code></pre>
+    </div>
+
+    <h3>Example: Partitioned table (warehouse / lakehouse)</h3>
+    <p>Partitioning by date lets you read/write only relevant data. Example DDL pattern:</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (conceptual)</div>
+        <pre><code>CREATE TABLE gold.daily_sales (
+  sale_date DATE,
+  product_id INT,
+  region_id INT,
+  revenue DECIMAL(18,2),
+  units_sold INT
+)
+PARTITION BY (sale_date);  -- or PARTITION BY RANGE (sale_date)
+-- Enables: SELECT ... WHERE sale_date = '2025-01-15' (only that partition scanned)</code></pre>
+    </div>
+
+    <p><strong>Trade-offs:</strong> Cost (storage and compute), performance (query latency, throughput), concurrency (many users querying at once), and governance (access control, audit). A <strong>lakehouse</strong> combines object storage (lake) with table formats and ACID semantics (warehouse-style), so you can keep Bronze in cheap storage and query Silver/Gold with SQL. If you only have a warehouse today, consider adding a lake when you need raw retention for compliance or replay, ML feature storage, or very large volume at lower cost.</p>
+    <h3>Cost and performance</h3>
+    <p>Warehouses charge for compute and storage; optimizing queries (partitioning, clustering, reducing full scans) reduces cost. Lakes typically have lower storage cost and pay-per-query or separate compute (e.g. Spark). Marts and cubes reduce load on the main warehouse by pre-aggregating or materializing for specific use cases.</p>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Warehouse: SQL, reporting; Lake: raw, files, ML; Mart: team subset; Cube: pre-aggregated fast BI.</li>
+            <li>Lakehouse = lake storage + table formats + ACID; Bronze in lake, Silver/Gold queried with SQL.</li>
+            <li>Use Python (pandas) or R (readr, arrow) to read CSV/JSON from landing and write Parquet for Silver; Parquet gives smaller size and faster column scans.</li>
+            <li>Partition by date for incremental loads and partition pruning; trade off cost, performance, concurrency.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Start with warehouse:</strong> Add lake for raw retention, replay, or ML; add mart for team; add cube for exec dashboards.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 14 goes into warehouses, lakes, marts, and cubes in more detail; Module 15 is the use case (Storage Strategy).</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What is a data mart?</h4>
+            <ul class="quiz-options"><li>A) A full copy of the warehouse</li><li>B) A subject-area subset for a team or use case</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Marts are focused subsets (schema/tables) for specific analytics or teams.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is a lakehouse?</h4>
+            <ul class="quiz-options"><li>A) Only a lake</li><li>B) Combines object storage (lake) with table formats and ACID semantics (warehouse-style)</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Lakehouse gives scale and cost of a lake with SQL and consistency of a warehouse.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: When might you add a data lake if you already have a warehouse?</h4>
+            <ul class="quiz-options"><li>A) Never</li><li>B) When you need raw retention, ML feature storage, or very large volume at lower cost</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Lake complements warehouse for raw data, ML, and scale.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What is a cube (or semantic layer) used for?</h4>
+            <ul class="quiz-options"><li>A) Storing raw logs</li><li>B) Pre-aggregated dimensions and measures for fast dashboards and sub-second response</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Cubes/semantic layers optimize for BI latency and concurrency.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: Where is Bronze layer data typically stored?</h4>
+            <ul class="quiz-options"><li>A) Only in a cube</li><li>B) Often in object storage (lake) or low-cost storage; Silver/Gold in warehouse or lakehouse</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Bronze is raw and voluminous; object storage is cost-effective; Silver/Gold need query performance.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

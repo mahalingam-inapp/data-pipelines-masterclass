@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 20: Capstone — Full Pipeline</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 20: Capstone — Full Pipeline Project</h2>
+
+    <h3>What the Capstone Covers</h3>
+    <p>One project that spans <strong>ingestion → ETL (medallion) → management (quality, staging) → storage (warehouse/lake + mart) → analytics (Power BI or Tableau)</strong>. Pick one scenario and deliver a pipeline design doc, code for Bronze/Silver/Gold, one quality check, one curated dataset, and one report or dashboard. Use generic tools and patterns.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> The capstone ties every section together. Design doc and runbook make the pipeline maintainable; the report answers a real business question and traces back to the pipeline.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Capstone: full pipeline end-to-end</div>
+        <svg viewBox="0 0 620 75" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr20" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="5" y="22" width="65" height="35" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="37" y="42" text-anchor="middle" font-size="9">Ingest</text>
+            <line x1="70" y1="39" x2="95" y2="39" stroke="#667eea" marker-end="url(#arr20)"/>
+            <rect x="95" y="22" width="55" height="35" rx="4" fill="#cd7f32" stroke="#8B4513"/><text x="122" y="42" text-anchor="middle" font-size="9" fill="white">Bronze</text>
+            <line x1="150" y1="39" x2="175" y2="39" stroke="#667eea" marker-end="url(#arr20)"/>
+            <rect x="175" y="22" width="55" height="35" rx="4" fill="#C0C0C0" stroke="#808080"/><text x="202" y="42" text-anchor="middle" font-size="9">Silver</text>
+            <line x1="230" y1="39" x2="255" y2="39" stroke="#667eea" marker-end="url(#arr20)"/>
+            <rect x="255" y="22" width="55" height="35" rx="4" fill="#FFD700" stroke="#B8860B"/><text x="282" y="42" text-anchor="middle" font-size="9">Gold</text>
+            <line x1="310" y1="39" x2="335" y2="39" stroke="#667eea" marker-end="url(#arr20)"/>
+            <rect x="335" y="22" width="75" height="35" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="372" y="42" text-anchor="middle" font-size="9">Quality + Mart</text>
+            <line x1="410" y1="39" x2="435" y2="39" stroke="#667eea" marker-end="url(#arr20)"/>
+            <rect x="435" y="22" width="90" height="35" rx="4" fill="#d4edda" stroke="#28a745"/><text x="480" y="42" text-anchor="middle" font-size="9">Report</text>
+        </svg>
+    </div>
+
+    <h3>Scenario options</h3>
+    <div class="example-box">
+        <ul>
+            <li><strong>Retail:</strong> POS + e-commerce + returns → daily sales and inventory view → mart → executive and ops dashboards.</li>
+            <li><strong>SaaS:</strong> Product events + billing + support tickets → usage and churn metrics → mart → product and success dashboards.</li>
+            <li><strong>Internal ops:</strong> HR + finance + project data → headcount, cost, project status → mart → management reporting.</li>
+        </ul>
+    </div>
+    <h3>Deliverables</h3>
+    <div class="step-box">
+        <ul>
+            <li>Pipeline design doc (sources, layers, storage, refresh).</li>
+            <li>Code/config for at least Bronze → Silver → Gold.</li>
+            <li>One data quality check and one curated dataset.</li>
+            <li>One report or dashboard (Power BI or Tableau) with short narrative.</li>
+        </ul>
+    </div>
+    <h3>By role</h3>
+    <div class="step-box">
+        <p><strong>Architect:</strong> Lead or review the design doc; present trade-offs (batch vs. stream, layers, storage, tooling) and failure/recovery strategy.</p>
+        <p><strong>Engineer:</strong> Own implementation (ingestion, medallion, quality, optional orchestration); document runbook items (e.g. “if source fails, do X”).</p>
+        <p><strong>Analyst:</strong> Own the report/dashboard and “data request” one-pager; present from a stakeholder perspective (question answered, refresh, one caveat).</p>
+    </div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Full span: ingestion to medallion to quality to storage (warehouse/lake + mart) to report/dashboard.</li>
+            <li>Deliverables: design doc, Bronze/Silver/Gold code, one quality check, one curated dataset, one report.</li>
+            <li>Document runbook (e.g. if source fails, do X); present from stakeholder perspective (question answered, refresh, caveat).</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Retail:</strong> POS + e-commerce to daily sales to mart to exec and ops dashboards.</li>
+        <li><strong>SaaS:</strong> Events + billing + support to usage and churn to mart to product and success dashboards.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 21 covers simulation (failure and recovery) and the holistic “business question → pipeline → report” flow; Module 22 is the roadmap and next steps.</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What must the capstone pipeline span?</h4>
+            <ul class="quiz-options"><li>A) Only ingestion</li><li>B) Ingestion → ETL (medallion) → management → storage → analytics</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Capstone covers the full pipeline lifecycle.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What code deliverable is required?</h4>
+            <ul class="quiz-options"><li>A) Only Bronze</li><li>B) At least Bronze → Silver → Gold (code or config)</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> All three medallion layers must be implemented.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: Who typically owns the runbook?</h4>
+            <ul class="quiz-options"><li>A) Only the architect</li><li>B) Engineer—runbooks document operational response</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Engineers document and maintain runbooks.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What should the design doc include?</h4>
+            <ul class="quiz-options"><li>A) Only tool names</li><li>B) Sources, layers, storage, refresh, and trade-offs</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Design doc captures architecture and decisions.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What does the analyst deliver in the capstone?</h4>
+            <ul class="quiz-options"><li>A) Only code</li><li>B) Report/dashboard and data request one-pager; present from stakeholder perspective</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Analyst owns the report and stakeholder narrative.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

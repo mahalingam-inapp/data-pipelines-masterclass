@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 10: Engineering Practices</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 10: Data Engineering Practices</h2>
+
+    <h3>What Are Data Engineering Practices?</h3>
+    <p>Data engineering practices make pipelines <strong>repeatable</strong>, <strong>testable</strong>, and <strong>maintainable</strong>. Code and config live in version control; runs happen in dev/staging/prod; tests catch regressions; documentation (data dictionary, lineage) helps analysts and auditors. A "definition of done" for a pipeline might include tests, docs, ownership, and SLA.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Promote only after staging passes. Same code and config in every environment mean no "works on my machine"—and when something breaks, you have history and tests to fix it fast.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Promotion flow: Dev → Staging → Prod</div>
+        <svg viewBox="0 0 400 70" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr10" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="20" y="20" width="95" height="45" rx="6" fill="#e8f4f8" stroke="#667eea"/><text x="67" y="45" text-anchor="middle" font-size="12">Dev</text><text x="67" y="58" text-anchor="middle" font-size="9" fill="#666">code, test</text>
+            <line x1="115" y1="42" x2="148" y2="42" stroke="#667eea" marker-end="url(#arr10)"/>
+            <rect x="148" y="20" width="95" height="45" rx="6" fill="#fff3cd" stroke="#ffc107"/><text x="195" y="45" text-anchor="middle" font-size="12">Staging</text><text x="195" y="58" text-anchor="middle" font-size="9" fill="#666">integration, UAT</text>
+            <line x1="243" y1="42" x2="276" y2="42" stroke="#667eea" marker-end="url(#arr10)"/>
+            <rect x="276" y="20" width="95" height="45" rx="6" fill="#d4edda" stroke="#28a745"/><text x="323" y="45" text-anchor="middle" font-size="12">Prod</text><text x="323" y="58" text-anchor="middle" font-size="9" fill="#666">live pipeline</text>
+        </svg>
+    </div>
+
+    <h3>Version control and environments</h3>
+    <p>Store all pipeline code and config (SQL, YAML, DAG definitions, env-specific variables) in version control (e.g. Git). This gives history, code review, and the ability to roll back. Use separate environments: <strong>dev</strong> for development and experimentation, <strong>staging</strong> for integration and acceptance testing with production-like data (or anonymized data), and <strong>prod</strong> for the live pipeline. Promote changes only after they pass tests in staging. Repeatable runs mean the same code and config produce the same result every time—no "works on my machine" surprises.</p>
+    <h3>Testing and documentation</h3>
+    <ul>
+        <li><strong>Unit tests:</strong> Test transform logic in isolation (e.g. a single SQL model or function) with fixed inputs and expected outputs. Fast and focused.</li>
+        <li><strong>Integration tests:</strong> Run the pipeline end-to-end against test data (or a subset). Validates that components work together and that the output schema and row counts are as expected.</li>
+        <li><strong>Data quality tests:</strong> Assertions on the data itself—row counts, uniqueness of keys, null checks, freshness (max timestamp), distribution checks (e.g. revenue ≥ 0). These can run after each load and optionally block release or alert.</li>
+        <li><strong>Documentation:</strong> README (how to run, what the pipeline does), data dictionary (column names, definitions, grain), and lineage (sources → tables). Code review for pipeline changes ensures consistency and knowledge sharing.</li>
+    </ul>
+    <h3>Example: Pipeline config in version control (YAML)</h3>
+    <div class="code-block">
+        <div class="code-lang">dbt_project.yml (simplified)</div>
+        <pre><code>name: 'sales_pipeline'
+version: '1.0.0'
+config-version: 2
+profile: 'warehouse'
+
+vars:
+  dev:
+    schema: dev_analytics
+  staging:
+    schema: staging_analytics
+  prod:
+    schema: analytics
+
+# Models, tests, and docs live in version control;
+# CI runs dbt test and dbt run in staging before prod deploy.</code></pre>
+    </div>
+
+    <h3>Example: Schema tests (dbt)</h3>
+    <p>Data quality tests run after models build. Below: uniqueness, not-null, and referential integrity. If any test fails, the run can fail or alert.</p>
+    <div class="code-block">
+        <div class="code-lang">schema.yml (tests on Silver/Gold)</div>
+        <pre><code>version: 2
+models:
+  - name: silver_orders
+    description: "Cleaned orders, one row per order_id"
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: amount
+        tests: [not_null]
+      - name: product_id
+        tests: [relationships:
+                to: ref('dim_product')
+                field: product_id]
+
+  - name: gold_daily_sales
+    columns:
+      - name: sale_date
+        tests: [not_null]
+      - name: product_id
+        tests: [not_null]
+    # Optional: custom test for row count or freshness
+    # tests: [dbt_utils.freshness: date_column, loaded_at_column, ...]</code></pre>
+    </div>
+
+    <h3>Example: README checklist for a pipeline repo</h3>
+    <p>A minimal README helps new contributors run and understand the pipeline. Checklist:</p>
+    <div class="step-box">
+        <ul>
+            <li><strong>What it does:</strong> One paragraph (e.g. "Ingests sales CSV and products API, builds Bronze → Silver → Gold; Gold feeds the sales dashboard.").</li>
+            <li><strong>How to run:</strong> Commands (e.g. <code>dbt run --target dev</code>, or <code>python run_pipeline.py --env dev</code>).</li>
+            <li><strong>Prerequisites:</strong> Python/DBT version, env vars (e.g. <code>WAREHOUSE_DSN</code>, <code>API_KEY</code>), and where to get them.</li>
+            <li><strong>Environments:</strong> dev / staging / prod and how to point to each (profile or env file).</li>
+            <li><strong>Tests:</strong> How to run tests (e.g. <code>dbt test</code>) and what they cover.</li>
+            <li><strong>Owner and SLA:</strong> Who to contact; when the pipeline is expected to complete (e.g. "Daily by 7 a.m. UTC").</li>
+        </ul>
+    </div>
+
+    <h3>Definition of done (concrete checklist)</h3>
+    <p>Use this as a template; adjust per org. Every new or changed pipeline should satisfy these before going to prod.</p>
+    <div class="step-box">
+        <table>
+            <tr><th>#</th><th>Criteria</th><th>Example</th></tr>
+            <tr><td>1</td><td>Code and config in version control</td><td>SQL, YAML, DAG in Git; no secrets in repo (use env or vault)</td></tr>
+            <tr><td>2</td><td>At least one test</td><td>Unit test for transform, or dbt schema test (unique, not_null), or row-count check</td></tr>
+            <tr><td>3</td><td>Documentation updated</td><td>Data dictionary or lineage for new/changed tables; README or runbook</td></tr>
+            <tr><td>4</td><td>Owner and SLA documented</td><td>Owner name/team; "Pipeline completes by 7 a.m.; alert if failed"</td></tr>
+            <tr><td>5</td><td>Verified in staging</td><td>Run succeeded in staging with test data or prod-like subset; no critical test failures</td></tr>
+        </table>
+    </div>
+    <p>Code review for pipeline changes catches missing tests or docs and shares knowledge. CI can run <code>dbt test</code> and <code>dbt run</code> on every PR against a dev schema.</p>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Version control for all code and config; dev → staging → prod with promotion only after tests pass.</li>
+            <li>Unit tests (logic in isolation), integration tests (run pipeline or key steps), data quality checks.</li>
+            <li>Documentation: data dictionary, lineage, runbook; ownership and SLA in "definition of done."</li>
+            <li>Repeatable runs: same code and config produce the same result in every environment.</li>
+            <li>CI/CD: build, test, and deploy pipeline code so changes are traceable and rollback is possible.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Team workflow:</strong> Engineer develops in dev, promotes to staging for UAT, then prod after sign-off.</li>
+        <li><strong>Audit:</strong> Lineage and data dictionary support compliance and "where did this number come from?"</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 11 covers cleaning, validation, and quality checks in depth; Module 12 is the use case (From Raw to Curated) where you apply these practices.</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: Why use separate dev/staging/prod for pipelines?</h4>
+            <ul class="quiz-options"><li>A) To use different vendors</li><li>B) To test changes before production and keep runs repeatable</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Environments let you validate pipeline changes without affecting production data.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is an integration test for a pipeline?</h4>
+            <ul class="quiz-options"><li>A) Only unit tests</li><li>B) End-to-end run against test data to validate components work together</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Integration tests validate the full flow and output.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What should version control contain for a pipeline?</h4>
+            <ul class="quiz-options"><li>A) Only the output data</li><li>B) Code, config, and DAG definitions (e.g. SQL, YAML)</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Version control holds source of truth for code and config; not the data itself.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: Why document "owner and SLA" for a pipeline?</h4>
+            <ul class="quiz-options"><li>A) To slow down releases</li><li>B) So everyone knows who is responsible and when the pipeline should complete (for on-call and escalation)</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Ownership and SLA clarify responsibility and when to alert.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What is a data quality test in this context?</h4>
+            <ul class="quiz-options"><li>A) A test that checks code syntax</li><li>B) An assertion on the data (e.g. row count, uniqueness, freshness, revenue ≥ 0)</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Data quality tests validate the output data; they can block release or trigger alerts.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

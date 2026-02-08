@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 15: Use Case — Storage Strategy</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .code-block { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+        .code-lang { background: #333; color: #9cdcfe; padding: 8px 12px; font-size: 0.9em; }
+        .code-block pre { margin: 0; padding: 16px; overflow-x: auto; }
+        .code-block code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h2>Module 15: Use Case — Storage Strategy for One Domain</h2>
+
+    <h3>What This Use Case Covers</h3>
+    <p>Pick one business domain (e.g. e-commerce orders). Propose: (1) where Bronze/Silver/Gold live (lake vs. warehouse), (2) one data mart (tables and purpose), (3) whether a cube is justified and why. Document in a one-page “storage map”. No vendor-specific systems — generic patterns only.
+    </p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> The storage map ties pipeline layers to where they live and who consumes them. Justify lake vs. warehouse with volume, latency, and cost; justify the mart and cube with audience and performance needs.
+    </div>
+
+    <h3>Scenario</h3>
+    <p>For your chosen domain, draw a storage map: which systems hold Bronze, Silver, and Gold; where the mart sits; and whether a cube (or semantic layer) is needed (e.g. for executive dashboards). Justify with volume, latency, and cost. Optionally create the mart or cube in a sandbox.</p>
+    <h3>Deliverables</h3>
+    <div class="example-box">
+        <ul>
+            <li>One-page storage map diagram and short rationale.</li>
+            <li>(Optional) Create the mart or cube in a sandbox.</li>
+        </ul>
+    </div>
+
+    <h3>Storage map in code: paths and mart</h3>
+    <p><strong>Process:</strong> Define where each layer lives (paths or schemas); implement one mart as a view or table. <strong>Components:</strong> base path or connection, layer names (Bronze, Silver, Gold), mart schema and view. <strong>Outcome:</strong> a concrete layout you can document and hand to engineers.</p>
+    <div class="code-block">
+        <div class="code-lang">Python: storage map as paths (lake layout)</div>
+        <pre><code># Document where each layer lives (e.g. for e-commerce)
+STORAGE_MAP = {
+    "bronze": "s3://company-datalake/bronze/orders/",
+    "silver": "s3://company-datalake/silver/orders_clean/",
+    "gold": "s3://company-datalake/gold/daily_orders_by_region/",
+    "mart_sales": "s3://company-datalake/marts/sales/"
+}
+# Pipeline scripts use these paths; analysts query Gold or mart via warehouse/catalog.</code></pre>
+    </div>
+    <div class="code-block">
+        <div class="code-lang">SQL: create the mart (view from Gold)</div>
+        <pre><code>-- Mart for sales team: subset of Gold with clear grain
+CREATE VIEW mart_sales.orders_by_region AS
+SELECT sale_date, region_id, product_id,
+  SUM(revenue) AS revenue, SUM(units) AS units, COUNT(*) AS order_count
+FROM gold.daily_orders_by_region
+GROUP BY sale_date, region_id, product_id;</code></pre>
+    </div>
+    <div class="code-block">
+        <div class="code-lang">R: read from Gold or mart for analysis</div>
+        <pre><code># Connect to warehouse and read Gold or mart (e.g. odbc, DBI)
+library(DBI)
+con <- dbConnect(odbc::odbc(), "Warehouse")
+gold_sales <- dbGetQuery(con, "SELECT * FROM gold.daily_orders_by_region WHERE sale_date >= '2025-01-01'")
+# Or read from exported Parquet at mart path
+sales_mart <- arrow::read_parquet("marts/sales/snapshot.parquet")</code></pre>
+    </div>
+
+    <h3>By role</h3>
+    <div class="step-box">
+        <p><strong>Architect:</strong> Own the storage map; justify lake vs. warehouse per layer; add security and access boundaries; document one “10x scale” or “real-time” evolution.</p>
+        <p><strong>Engineer:</strong> Implement chosen storage (partitioned tables or lake layout, one mart or cube); run one query showing partition pruning or mart usage.</p>
+        <p><strong>Analyst:</strong> Specify “what I need in the mart” (dimensions, measures, grain) and one performance requirement; review the map from “can I build my report?”</p>
+    </div>
+    <div class="success-box"><strong>Interactive wrap-up:</strong> Present the map; instructor or peer asks “What if we add 10x volume?” or “What if we need real-time?” — revise the map verbally or on the diagram.</div>
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Storage map: where Bronze/Silver/Gold live, where the mart sits, whether a cube is needed—with rationale.</li>
+            <li>Justify with volume, latency, cost; document 10x scale or real-time evolution.</li>
+            <li>Analyst specifies dimensions, measures, grain and reviews whether they can build their report.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>E-commerce:</strong> Bronze in lake, Silver/Gold in warehouse; orders mart for ops; cube for exec dashboard.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Section 6 (Modules 16–19) uses this storage to feed Power BI and Tableau reports.</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What should the storage map show?</h4>
+            <ul class="quiz-options"><li>A) Only application code</li><li>B) Where Bronze/Silver/Gold live, where the mart sits, and whether a cube is needed—with rationale</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> The map documents storage choices and justification (volume, latency, cost).</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: Why document "10x scale" or "real-time" evolution?</h4>
+            <ul class="quiz-options"><li>A) To avoid building anything</li><li>B) To anticipate how the storage map would change if volume or latency requirements grow</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Evolution planning helps architects and engineers prepare for growth.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What should the analyst specify for the mart?</h4>
+            <ul class="quiz-options"><li>A) Only table names</li><li>B) Dimensions, measures, grain, and one performance requirement (e.g. load time)</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Analyst input ensures the mart supports the right reports and performance.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: When is a cube justified?</h4>
+            <ul class="quiz-options"><li>A) Always</li><li>B) When executive dashboards or high concurrency need sub-second response</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Cube is justified when direct query to Gold/mart is too slow or too heavy.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What does "can I build my report?" mean in the analyst review?</h4>
+            <ul class="quiz-options"><li>A) Only whether the analyst can code</li><li>B) Whether the storage map provides the right tables, grain, and performance to build the report</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Analyst validates that the proposed storage supports their reporting needs.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 21: Simulation & Holistic View</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 21: Simulation & Holistic View</h2>
+
+    <h3>What This Module Covers</h3>
+    <p><strong>Simulation</strong> lets you practice failure and recovery in a safe setting (e.g. missing file, schema change, duplicate key). The <strong>holistic view</strong> ties the course together: business question → data need → pipeline design → storage → report → action.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Breaking the pipeline on purpose (missing file, schema change, duplicate key) and fixing it in a time box builds operational confidence. The "question → pipeline → report" roundtable connects everything to real business questions.
+    </div>
+
+    <h3>Simulation: Failure and recovery</h3>
+    <p>Scenarios to practice:</p>
+    <div class="example-box">
+        <ul>
+            <li><strong>Source file missing</strong> → pipeline fails → fix (retry, fallback, alert) and re-run.</li>
+            <li><strong>Schema change</strong> (new required column) → pipeline breaks → update Silver and Gold and deploy.</li>
+            <li><strong>Duplicate key in source</strong> → duplicate rows in Gold → add dedup and backfill.</li>
+        </ul>
+    </div>
+    <p>Instructor or script “breaks” the pipeline; teams diagnose and fix in a time box; debrief on steps. Rotate: one person breaks, another fixes.</p>
+    <h3>Holistic view: Business question → answer</h3>
+    <div class="flow-step">1. Start with a business question (e.g. “Why did churn increase in Q3?”).</div>
+    <div class="flow-step">2. Map to data need: which events, billing, support; which layers; which mart; which report.</div>
+    <div class="flow-step">3. Discuss what’s missing and what’s next (e.g. real-time, ML).</div>
+    <p>Roundtable: each participant brings one real business question; group picks two and walks through “question → pipeline → report” on a whiteboard. One-pager: data request template (question, needed data, suggested pipeline change, expected output).</p>
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Simulation: missing file, schema change, duplicate key; diagnose and fix in a time box; debrief on steps.</li>
+            <li>Holistic: business question to data need to pipeline to storage to report; discuss what is missing and what is next.</li>
+            <li>Data request template: question, needed data, pipeline change, expected output.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Ops drill:</strong> Rotate who breaks and who fixes; document runbook updates from each scenario.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 20 was the capstone build; this one stresses troubleshooting and end-to-end thinking. Module 22 is the roadmap and next steps.</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What is the purpose of simulation in this module?</h4>
+            <ul class="quiz-options"><li>A) To avoid failures</li><li>B) To practice failure and recovery in a safe setting</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Simulation builds operational confidence.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: If a source file is missing, what steps might you take?</h4>
+            <ul class="quiz-options"><li>A) Ignore it</li><li>B) Retry, fallback, or alert; then re-run after fix</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Operational response includes retry, fallback, and alerting.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What does the holistic view start with?</h4>
+            <ul class="quiz-options"><li>A) A tool</li><li>B) A business question (e.g. "Why did churn increase?")</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> End-to-end thinking starts from the business question.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What should the data request one-pager include?</h4>
+            <ul class="quiz-options"><li>A) Only the question</li><li>B) Question, needed data, suggested pipeline change, expected output</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> One-pager links question to data and pipeline.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: How do you handle duplicate key in source leading to duplicates in Gold?</h4>
+            <ul class="quiz-options"><li>A) Leave as-is</li><li>B) Add deduplication logic and backfill affected data</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Dedup in Silver/Gold and backfill corrects the issue.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 12: Use Case — From Raw to Curated</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .code-block { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+        .code-lang { background: #333; color: #9cdcfe; padding: 8px 12px; font-size: 0.9em; }
+        .code-block pre { margin: 0; padding: 16px; overflow-x: auto; }
+        .code-block code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 12: Use Case — From Raw to Curated</h2>
+
+    <h3>What This Use Case Covers</h3>
+    <p>Extend the medallion use case (Module 9): add (1) validation rules and a quarantine path, (2) one data quality check (e.g. row count or key metric), (3) a one-page data dictionary for the Gold table. Optionally add one orchestration run (e.g. Airflow DAG or pipeline schedule).</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Validation + quarantine + one quality check + data dictionary turn a medallion build into a production-ready release. The dictionary is where analysts and engineers agree on meaning and caveats.
+    </div>
+
+    <h3>Scenario</h3>
+    <p>Starting from your Bronze/Silver/Gold build: introduce validation (e.g. “revenue ≥ 0”, “product_id in dimension”); send failures to a quarantine table and alert. Add at least one automated quality check (row count or uniqueness) and wire it into a run. Write a short data dictionary for the Gold table (column names, definitions, caveats). Optionally describe or implement one scheduled/orchestrated run.</p>
+    <h3>Deliverables</h3>
+    <div class="example-box">
+        <ul>
+            <li>Validation logic and quarantine path.</li>
+            <li>One data quality check and how it’s wired (e.g. in DAG or pipeline).</li>
+            <li>One-page data dictionary for the Gold table.</li>
+            <li>(Optional) DAG or schedule description.</li>
+        </ul>
+    </div>
+
+    <h3>Validation and quarantine (example code)</h3>
+    <p>Before writing to Silver, validate rows and route failures to quarantine. Example: only allow rows where <code>revenue &gt;= 0</code> and <code>product_id</code> exists in the product dimension; everything else goes to <code>quarantine.sales_failed</code> with a <code>fail_reason</code>. Alert when quarantine has new rows.</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (validation → Silver and quarantine)</div>
+        <pre><code>-- Pass: insert into Silver
+INSERT INTO silver.sales_clean
+SELECT sale_id, sale_date, product_id, region_id, quantity, revenue, updated_at
+FROM staging.sales_staging s
+WHERE s.revenue >= 0
+  AND s.product_id IN (SELECT product_id FROM silver.products_clean)
+  AND s.sale_id IS NOT NULL;
+
+-- Fail: insert into quarantine with reason
+INSERT INTO quarantine.sales_failed
+SELECT s.*,
+  CASE WHEN s.revenue &lt; 0 THEN 'revenue_negative'
+       WHEN s.product_id NOT IN (SELECT product_id FROM silver.products_clean) THEN 'product_id_invalid'
+       WHEN s.sale_id IS NULL THEN 'sale_id_null'
+       ELSE 'unknown' END AS fail_reason,
+  current_timestamp() AS failed_at
+FROM staging.sales_staging s
+WHERE s.revenue &lt; 0
+   OR s.product_id NOT IN (SELECT product_id FROM silver.products_clean)
+   OR s.sale_id IS NULL;</code></pre>
+    </div>
+    <p>Wire a post-load check (e.g. <code>SELECT COUNT(*) FROM quarantine.sales_failed WHERE failed_at &gt;= current_date()</code>) into the DAG: if count &gt; 0, send an alert or fail the run.</p>
+
+    <h3>One quality check wired into the run</h3>
+    <p>After building Gold, run a quality check. Example: assert that the grain of <code>gold.daily_sales_by_product_region</code> is unique on (sale_date, product_id, region_id) and that row count is within an expected range (e.g. not zero for today).</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (uniqueness + row-count check)</div>
+        <pre><code>-- Uniqueness: expect 0 rows
+SELECT sale_date, product_id, region_id, COUNT(*) AS cnt
+FROM gold.daily_sales_by_product_region
+GROUP BY sale_date, product_id, region_id HAVING COUNT(*) > 1;
+
+-- Row count sanity: e.g. today's partition has rows (run after daily load)
+SELECT COUNT(*) FROM gold.daily_sales_by_product_region WHERE sale_date = CURRENT_DATE;</code></pre>
+    </div>
+
+    <h3>Sample data dictionary (Gold table)</h3>
+    <p>A one-page dictionary for the Gold table helps analysts and engineers agree on meaning, grain, and caveats. Example for <code>gold.daily_sales_by_product_region</code>:</p>
+    <table>
+        <thead>
+            <tr><th>Column</th><th>Definition</th><th>Type</th><th>Grain / caveats</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>sale_date</code></td><td>Business date of the sale (date partition).</td><td>DATE</td><td>Part of grain. One row per (sale_date, product_id, region_id).</td></tr>
+            <tr><td><code>product_id</code></td><td>Surrogate or business key for product; joins to product dimension.</td><td>INT / VARCHAR</td><td>Part of grain. Only products with at least one sale in that day/region.</td></tr>
+            <tr><td><code>region_id</code></td><td>Region (e.g. store region or geography); joins to region dimension.</td><td>INT / VARCHAR</td><td>Part of grain.</td></tr>
+            <tr><td><code>quantity_sold</code></td><td>Total units sold that day for this product in this region.</td><td>DECIMAL or INT</td><td>Sum of line-level quantity. Excludes quarantined rows.</td></tr>
+            <tr><td><code>revenue</code></td><td>Total revenue (e.g. quantity × unit price) for that day/product/region.</td><td>DECIMAL(18,2)</td><td>Same exclusions as quantity. Currency and rounding documented elsewhere.</td></tr>
+        </tbody>
+    </table>
+    <p><strong>Grain:</strong> One row per (sale_date, product_id, region_id). <strong>Caveats:</strong> Built incrementally by sale_date; rows that failed validation (e.g. negative revenue) are in quarantine and not included; backfills may change historical dates.</p>
+
+    <h3>By role</h3>
+    <div class="step-box">
+        <p><strong>Architect:</strong> Define “definition of done” for a pipeline release; design a simple data-quality SLA and escalation path.</p>
+        <p><strong>Engineer:</strong> Add validation and quarantine; implement one quality check and wire into run or DAG.</p>
+        <p><strong>Analyst:</strong> Co-author the data dictionary; write one “sanity check” you run when new data arrives (e.g. compare to prior period).</p>
+    </div>
+    <div class="success-box"><strong>Interactive wrap-up:</strong> Exchange dictionaries with another team; use their Gold description to write one analytical query and one quality check.</div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Add validation (e.g. revenue ≥ 0, product_id in dimension), quarantine path, and alert.</li>
+            <li>One data quality check (row count or uniqueness) wired into the run or DAG.</li>
+            <li>One-page data dictionary for Gold: columns, definitions, caveats.</li>
+            <li>Optional: DAG or schedule description; "definition of done" for release.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Gold release:</strong> Validation + quarantine + row-count check + dictionary before opening to analysts.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Section 5 (Modules 13–15) covers where to store this data (warehouses, lakes, marts, cubes).</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: In this use case, where do rows that fail validation go?</h4>
+            <ul class="quiz-options"><li>A) Deleted</li><li>B) To a quarantine table for inspection and optional backfill</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Quarantine preserves failed rows so you can fix and backfill.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What should the data dictionary for the Gold table include?</h4>
+            <ul class="quiz-options"><li>A) Only column names</li><li>B) Column names, business definitions, data type, grain, and caveats</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> A good dictionary enables correct use and validation.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: Why wire a data quality check into the pipeline run?</h4>
+            <ul class="quiz-options"><li>A) To slow the pipeline</li><li>B) To fail the run or alert when quality fails so bad data doesn't reach consumers</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Automated checks catch regressions immediately.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What is a "sanity check" in the analyst role?</h4>
+            <ul class="quiz-options"><li>A) A unit test</li><li>B) A quick check when new data arrives (e.g. compare to prior period)</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Sanity checks are lightweight validations analysts run to spot obvious issues.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What is the purpose of a data-quality SLA?</h4>
+            <ul class="quiz-options"><li>A) To avoid documentation</li><li>B) To define when data should be ready and what checks must pass; supports escalation</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> SLA sets expectations and triggers alerts when not met.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

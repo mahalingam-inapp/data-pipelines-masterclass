@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 4: Ingestion Fundamentals</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .plain-terms strong { color: #764ba2; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .demo-box { background: #e8f4f8; border: 1px solid #667eea; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .demo-box summary { cursor: pointer; font-weight: bold; color: #667eea; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 4: Ingestion Fundamentals</h2>
+
+    <h3>What Is Ingestion?</h3>
+    <p><strong>Ingestion</strong> is the step where data is read from sources—databases, files, APIs, event streams—and written to a <strong>landing zone</strong>: a raw storage area that the rest of the pipeline uses. You do not transform or clean during ingestion; you capture data "as-is" so you can replay, audit, or reprocess later.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Ingestion is the foundation of every pipeline. If you don't land raw data reliably, downstream transforms and reports have nothing to build on. The landing zone is your single source of raw truth—pull (you query) or push (sources send to you), batch or streaming.
+    </div>
+
+    <h3>Why Ingestion Matters</h3>
+    <p>Sources change: APIs add fields, files arrive late, databases get schema updates. By landing first, you isolate those changes from your business logic. When a transform fails or a requirement changes, you reprocess from the landing zone instead of hitting the source again—reducing load on source systems and giving you a clear audit trail.</p>
+
+    <div class="plain-terms">
+        <strong>Core terms:</strong> <strong>Pull</strong> = your pipeline initiates the read (query, API call, file list). <strong>Push</strong> = the source sends data to you (webhooks, CDC). <strong>Batch</strong> = run on a schedule (daily, hourly). <strong>Streaming</strong> = continuous flow. <strong>Landing zone</strong> = raw, as-is storage before any transform.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Sources and landing zone</div>
+        <svg viewBox="0 0 500 110" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr4" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="10" y="15" width="75" height="28" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="47" y="32" text-anchor="middle" font-size="10">Database</text>
+            <rect x="10" y="48" width="75" height="28" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="47" y="65" text-anchor="middle" font-size="10">Files</text>
+            <rect x="10" y="81" width="75" height="28" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="47" y="98" text-anchor="middle" font-size="10">API / Events</text>
+            <line x1="85" y1="29" x2="125" y2="55" stroke="#667eea" marker-end="url(#arr4)"/>
+            <line x1="85" y1="62" x2="125" y2="55" stroke="#667eea" marker-end="url(#arr4)"/>
+            <line x1="85" y1="95" x2="125" y2="55" stroke="#667eea" marker-end="url(#arr4)"/>
+            <rect x="125" y="20" width="120" height="70" rx="6" fill="#f0f7ff" stroke="#764ba2" stroke-width="2"/>
+            <text x="185" y="48" text-anchor="middle" font-size="12" font-weight="bold">Landing zone</text>
+            <text x="185" y="68" text-anchor="middle" font-size="10" fill="#666">Raw, as-is storage</text>
+            <text x="185" y="82" text-anchor="middle" font-size="10" fill="#666">Replay / audit</text>
+            <line x1="245" y1="55" x2="285" y2="55" stroke="#667eea" marker-end="url(#arr4)"/>
+            <rect x="285" y="20" width="120" height="70" rx="6" fill="#d4edda" stroke="#28a745"/>
+            <text x="345" y="48" text-anchor="middle" font-size="12" font-weight="bold">Transform</text>
+            <text x="345" y="68" text-anchor="middle" font-size="10" fill="#666">Clean, join, aggregate</text>
+            <rect x="420" y="35" width="75" height="50" rx="4" fill="#fff3cd" stroke="#ffc107"/>
+            <text x="457" y="62" text-anchor="middle" font-size="10">Warehouse / Lake</text>
+        </svg>
+    </div>
+
+    <h3>Source types in detail</h3>
+    <p><strong>Databases:</strong> You may do a full dump (all rows) or incremental sync (only new or changed rows). Change-data-capture (CDC) streams changes in near real-time. Connection details, credentials, and query or extract logic must be managed securely.</p>
+    <p><strong>Files:</strong> CSV, JSON, Parquet, or other formats on local disk, SFTP, or cloud storage (S3, ADLS, GCS). Files often arrive on a schedule (e.g. daily export). You need to handle naming conventions (e.g. date in filename), encoding, and schema (columns may change over time).</p>
+    <p><strong>APIs:</strong> REST APIs are common for SaaS data (e.g. Stripe, Salesforce). You must handle authentication (API keys, OAuth), pagination (cursor or offset), and rate limits. Data is usually JSON; you may need to flatten or normalize nested structures when landing.</p>
+    <p><strong>Events:</strong> Message queues (e.g. Kafka, RabbitMQ) or event streams deliver records in real time. Ingestion here means consuming from a topic or queue and writing to a landing store (e.g. object storage or a table). Ordering, exactly-once semantics, and backpressure are important.</p>
+
+    <h3>Push vs. pull</h3>
+    <p><strong>Pull:</strong> Your pipeline initiates the read—e.g. runs a query against a database, calls an API, or lists and reads files from a bucket. You control when and how often ingestion runs. Most batch pipelines are pull-based.</p>
+    <p><strong>Push:</strong> The source sends data to you—e.g. webhooks POST to your endpoint, or a CDC connector pushes changes. You must provide a reliable endpoint and handle duplicates and ordering if the source retries.</p>
+
+    <h3>Landing zone concept</h3>
+    <p>The <strong>landing zone</strong> is where raw data is stored before any transformation. Benefits: (1) you can replay from raw if a downstream transform is wrong; (2) you have an audit trail; (3) you can reprocess with new logic without re-reading the source. Data is typically stored in its original form (same format, minimal or no schema enforcement). Schema-on-read means you interpret the structure when you read the data later; schema-on-write means you enforce a schema at load time (e.g. Parquet with a defined schema). Throughput and volume (rows per second, size per day) drive choices such as partitioning the landing area by date or source.</p>
+
+    <h3>Throughput and volume</h3>
+    <p>Design ingestion for the expected volume. Small datasets (e.g. a few MB per day) can be read in one go; large ones may need partitioning, parallel reads, or streaming. Rate limits (APIs) and connection limits (databases) may require throttling or batching. Understanding volume helps you choose batch vs. stream and the right storage and tooling.</p>
+
+    <h3>Example: Read a CSV and land it (Python)</h3>
+    <p>Below is a minimal pattern: read from a path or URL, add a run identifier, write to a landing path. In production you would add error handling, schema validation, and possibly partitioning by date.</p>
+    <div class="code-block">
+        <div class="code-lang">Python (conceptual)</div>
+        <pre><code>import pandas as pd
+from pathlib import Path
+from datetime import datetime
+
+def ingest_csv_to_landing(source_path: str, landing_dir: str) -> None:
+    run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    df = pd.read_csv(source_path)
+    out_path = Path(landing_dir) / f"sales_{run_id}.parquet"
+    df.to_parquet(out_path, index=False)  # or .csv
+    print(f"Landed {len(df)} rows to {out_path}")</code></pre>
+    </div>
+
+    <h4>Same idea in R</h4>
+    <p>R can land data from CSV (or API responses) into a folder with a run id so downstream steps have a clear, replayable source.</p>
+    <div class="code-block">
+        <div class="code-lang">R (readr + arrow)</div>
+        <pre><code>library(readr)
+library(arrow)
+run_id <- format(Sys.time(), "%Y%m%d_%H%M%S")
+df <- read_csv("source/sales_export.csv")
+out_path <- paste0("landing/sales_", run_id, ".parquet")
+write_parquet(df, out_path)
+# Landed nrow(df) rows; downstream reads from landing/</code></pre>
+    </div>
+
+    <div class="demo-box">
+        <details>
+            <summary>Try it: What happens if you run this twice?</summary>
+            <p>Each run creates a <em>new</em> file (run_id in the name), so you don't overwrite. That's one form of idempotency: multiple runs don't corrupt data; downstream should read "latest" or a specific run. Alternative: overwrite the same path (e.g. <code>landing/sales_latest.parquet</code>) so the next run replaces the file—also idempotent for "current snapshot" use.</p>
+        </details>
+    </div>
+
+    <h3>Practical use cases</h3>
+    <div class="example-box">
+        <ul>
+            <li><strong>Ingesting SaaS API data:</strong> e.g. Stripe (payments), Salesforce (CRM). Use REST client with auth and pagination; land full response or normalized records; run on a schedule (e.g. daily) or incremental (e.g. by updated_at).</li>
+            <li><strong>Loading files from SFTP or cloud storage:</strong> List files (e.g. by prefix or date), read each file, write to landing (e.g. same format in a bucket or table). Handle naming conventions and missing files.</li>
+            <li><strong>Consuming CDC from a transactional DB:</strong> Use a CDC tool or connector to stream insert/update/delete events; land to a table or object store for downstream processing.</li>
+        </ul>
+    </div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Ingestion reads from sources (DBs, files, APIs, events) and writes raw data to a landing zone.</li>
+            <li>Pull = you initiate the read; push = the source sends data. Batch and streaming are both valid.</li>
+            <li>Landing "as-is" enables replay, audit, and reprocessing without re-hitting the source.</li>
+            <li>Design for volume and rate limits: partition, throttle, and choose batch vs. stream accordingly.</li>
+            <li>Use run IDs or overwrite policies so multiple runs behave predictably (idempotency).</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>SaaS sync:</strong> Daily pull from Stripe, Salesforce, or HubSpot via REST APIs into a landing table or bucket.</li>
+        <li><strong>File drops:</strong> SFTP or S3 folders with CSV/Parquet; list by date/prefix, read, and land with a run ID.</li>
+        <li><strong>CDC:</strong> Stream database changes (insert/update/delete) into a landing store for near real-time pipelines.</li>
+        <li><strong>Events:</strong> Consume from Kafka or Kinesis and land to object storage or a table for batch or micro-batch transform.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Relationship to other modules:</strong> Module 5 covers connectors, APIs, idempotency, and reliability in depth; Module 6 is the ingestion use case (Ingest and Land). Section 3 (Modules 7–9) builds transform layers on top of landed data.
+    </div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What is a landing zone?</h4>
+            <ul class="quiz-options"><li>A) A report</li><li>B) Raw storage where ingested data is written before transformation, for replay and audit</li><li>C) A database only</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> The landing zone holds raw copies of source data so you can replay or audit and reprocess without re-reading the source.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: For 10M events per day from a mobile app, batch or stream?</h4>
+            <ul class="quiz-options"><li>A) Always batch</li><li>B) Stream if you need near real-time; batch if daily aggregation is enough</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Choice depends on latency requirements and cost; streaming is for real-time, batch for scheduled aggregation.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is "pull" vs. "push" in ingestion?</h4>
+            <ul class="quiz-options"><li>A) Pull = pipeline initiates the read; push = source sends data to you</li><li>B) They are the same</li><li>C) Push is always faster</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: A.</strong> Pull means your pipeline queries or reads; push means the source delivers (e.g. webhooks, CDC).</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: Why store data in a landing zone "as-is" before transforming?</h4>
+            <ul class="quiz-options"><li>A) To save space</li><li>B) To allow replay, audit, and reprocessing without re-reading the source</li><li>C) To make reports faster</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Raw copy supports debugging, compliance, and changing transform logic without touching the source again.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: When ingesting from a REST API, what do you typically need to handle?</h4>
+            <ul class="quiz-options"><li>A) Only the URL</li><li>B) Authentication, pagination, rate limits, and often JSON flattening</li><li>C) Only CSV format</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> APIs require auth, pagination for large result sets, and respect for rate limits; response is often JSON and may need normalization.</div>
+        </div>
+    </div>
+
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

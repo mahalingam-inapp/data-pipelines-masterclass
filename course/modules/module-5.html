@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 5: Connectors, APIs & Reliability</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .demo-box { background: #e8f4f8; border: 1px solid #667eea; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .demo-box summary { cursor: pointer; font-weight: bold; color: #667eea; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 5: Connectors, APIs & Reliability</h2>
+
+    <h3>What Are Connectors and Reliability?</h3>
+    <p>Connectors and APIs are how you <strong>pull</strong> or <strong>receive</strong> data. REST APIs need authentication, pagination, and rate-limit handling. File-based ingestion uses CSV, JSON, Parquet and cloud storage (S3, ADLS, GCS). <strong>Idempotency</strong> means running the same load twice produces the same result (no duplicate rows). Reliability comes from retries, backoff, dead-letter queues (DLQ), logging, and alerting.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> APIs and sources fail transiently. Idempotency (upsert by key, overwrite by partition) and retry with backoff keep your pipeline safe when you re-run or when the source is temporarily unavailable.
+    </div>
+
+    <h3>Connectors and APIs in detail</h3>
+    <p><strong>REST APIs:</strong> Use HTTPS and standard methods (GET for read). Authentication is often via API key (header or query) or OAuth 2.0. Many APIs paginate: they return a limited number of records per request and provide a "next" cursor or page number. You must loop until all pages are fetched. Rate limits (e.g. 100 requests per minute) require throttling or backoff; otherwise your job may be blocked or banned. Store the raw response or a normalized form in the landing zone; include a run id or timestamp so reruns don't create duplicates if you design for idempotency.</p>
+    <p><strong>File-based:</strong> CSV, JSON, Parquet are common. Cloud storage (S3, ADLS, GCS) is typical for landing: you list objects by prefix or date, read each file, and optionally write to another location or table. Incremental loads use a watermark: e.g. only read files modified after the last run, or only rows where <code>last_updated</code> is greater than the last run. This avoids re-reading and re-processing the same data.</p>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Retry with exponential backoff (conceptual)</div>
+        <svg viewBox="0 0 440 70" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <text x="30" y="28" font-size="11" fill="#333">Call API</text>
+            <text x="30" y="48" font-size="10" fill="#666">fail?</text>
+            <path d="M 70 25 L 95 25 L 95 35 L 115 35" stroke="#667eea" fill="none" marker-end="url(#m5)"/>
+            <rect x="115" y="28" width="70" height="24" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="150" y="44" text-anchor="middle" font-size="10">Wait 1s, retry</text>
+            <path d="M 185 40 L 210 40 L 210 50 L 230 50" stroke="#667eea" fill="none" marker-end="url(#m5)"/>
+            <rect x="230" y="33" width="75" height="24" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="267" y="49" text-anchor="middle" font-size="10">Wait 2s, retry</text>
+            <path d="M 305 45 L 330 45 L 330 55 L 350 55" stroke="#667eea" fill="none" marker-end="url(#m5)"/>
+            <rect x="350" y="38" width="85" height="24" rx="4" fill="#d4edda" stroke="#28a745"/><text x="392" y="54" text-anchor="middle" font-size="10">Success or fail + alert</text>
+            <defs><marker id="m5" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#667eea"/></marker></defs>
+        </svg>
+    </div>
+
+    <h3>Idempotency and incremental loads</h3>
+    <p><strong>Idempotent load:</strong> If the job runs twice (e.g. after a retry or a manual re-run), the target state is the same—no duplicate rows, no wrong totals. Achieve this by using a unique key (e.g. order_id) and upsert/merge semantics: insert new rows, update existing ones. Alternatively, overwrite a partition or a full table in a way that is deterministic (e.g. "replace partition for date X"). Avoid "append only" without deduplication if the source might be read twice.</p>
+    <p><strong>Incremental keys and watermarking:</strong> For large tables, full refresh every time is expensive. Use an incremental key (e.g. <code>updated_at</code>, <code>id</code>) and a watermark (the max value processed so far). Each run fetches only rows that are new or changed since the watermark, then updates the watermark. Handle late-arriving data (e.g. a record with an old timestamp that arrives in the next run) by either re-reading a window or accepting a delay in consistency.</p>
+
+    <div class="code-block">
+        <div class="code-lang">Incremental fetch pattern (pseudocode)</div>
+        <pre><code>watermark = get_last_watermark()  # e.g. max(updated_at) from last run
+rows = api.get_records(updated_after=watermark)
+if rows:
+    upsert_to_target(rows)  # merge by key, no duplicates
+    set_watermark(max(r.updated_at for r in rows))</code></pre>
+    </div>
+
+    <div class="demo-box">
+        <details>
+            <summary>Interactive: Design an incremental strategy for a "last_updated" source table</summary>
+            <p>Assume the source has <code>id</code> and <code>last_updated</code>. Option A: store the max <code>last_updated</code> after each run; next run fetch <code>WHERE last_updated &gt; :watermark</code>. Option B: use a "full sync" once per week and incremental daily. Option C: CDC (change-data-capture) if the DB supports it. Discuss: what if a row is updated twice between runs? (Upsert by id so the latest wins.)</p>
+        </details>
+    </div>
+
+    <h3>Reliability and error handling</h3>
+    <div class="step-box">
+        <ul>
+            <li><strong>Retries and backoff:</strong> Transient failures (e.g. network blip, 503) are common. Retry the request a few times with exponential backoff (e.g. wait 1s, then 2s, then 4s) so you don't overwhelm the source. Set a max retry count and then fail the run so alerting fires.</li>
+            <li><strong>Dead-letter queue (DLQ):</strong> For partial failures (e.g. 90% of records succeed, 10% are malformed), write the failed records to a DLQ—a table or queue—for later inspection and manual or automated fix. This keeps the main pipeline from blocking on a few bad rows.</li>
+            <li><strong>Logging and alerting:</strong> Log each run (start, end, row counts, errors). Alert when a run fails or when a run doesn't complete within a window (e.g. "daily job should finish by 8 a.m."). On-call or owners can then fix the issue and optionally trigger a backfill.</li>
+        </ul>
+    </div>
+    <p><strong>Partial failure handling:</strong> Sometimes only part of the data is available (e.g. one file is missing, or one API partition fails). Decide whether to fail the whole run or write what you have and alert. Replay and backfill: after fixing a bug or a source issue, you may need to re-run the pipeline for a past date range; idempotency and partitioning make this feasible.</p>
+    <div class="highlight-box"><strong>Scenario:</strong> The API returns 500 for two hours and then recovers. The pipeline should retry with backoff during the outage; after max retries, fail the run and alert. When the API is back, the next scheduled run (or a manual run) can succeed. Optionally, a backfill run can re-fetch the missing two hours if the API supports time-based queries.</div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>REST APIs: auth, pagination, rate limits; use retry with exponential backoff for transient failures.</li>
+            <li>Idempotency: same run twice → same result; use unique keys and upsert/merge or overwrite by partition.</li>
+            <li>Incremental: watermark (e.g. max updated_at) so you only fetch new or changed rows.</li>
+            <li>DLQ: store failed records for inspection so the main pipeline doesn't block on a few bad rows.</li>
+            <li>Log and alert on run failure or SLA breach; then fail and alert so someone can fix or backfill.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>SaaS sync:</strong> Stripe, Salesforce—paginate, throttle, land with run id; incremental by updated_at.</li>
+        <li><strong>File ingestion:</strong> S3/GCS list by prefix, watermark by file modified time, idempotent overwrite by date.</li>
+        <li><strong>API outages:</strong> Retry with backoff; after max retries fail and alert; backfill when source recovers.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 4 introduced ingestion; this one deepens connectors and reliability. Module 6 is the use case (Ingest and Land) where you implement these patterns.</div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What does idempotent load mean?</h4>
+            <ul class="quiz-options"><li>A) Load once per day</li><li>B) Running the same load twice produces the same result (no duplicates)</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Idempotency avoids duplicate data when retries or re-runs happen; use unique keys and upsert/merge.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is a dead-letter queue (DLQ) used for?</h4>
+            <ul class="quiz-options"><li>A) Storing the most important data</li><li>B) Storing failed records for later inspection so the main pipeline doesn't block</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> DLQ holds records that failed validation or processing so you can fix and backfill without blocking the rest.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: Why use exponential backoff when retrying API calls?</h4>
+            <ul class="quiz-options"><li>A) To make the job faster</li><li>B) To avoid overwhelming the source and to give the source time to recover</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Backoff (e.g. 1s, 2s, 4s) reduces load on the API and respects rate limits during transient failures.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What is a watermark used for in incremental ingestion?</h4>
+            <ul class="quiz-options"><li>A) To encrypt data</li><li>B) To track the last processed value (e.g. max updated_at) so you only fetch new or changed rows</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Watermark avoids re-reading full tables; each run fetches only data after the watermark.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: When an API returns 500 for two hours then recovers, what should the pipeline do?</h4>
+            <ul class="quiz-options"><li>A) Never retry</li><li>B) Retry with backoff; after max retries fail and alert; next run or backfill can catch up</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Retry with backoff; then fail and alert so someone knows; after recovery, scheduled or manual run can fill the gap.</div>
+        </div>
+    </div>
+
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 6: Use Case — Ingest and Land</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .worked-example { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .worked-example h4 { color: #764ba2; margin-top: 0; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 6: Use Case — Ingest and Land</h2>
+
+    <h3>What This Use Case Covers</h3>
+    <p>Ingest (1) a public dataset (e.g. sample sales CSV from a URL or file) and (2) one REST API (e.g. mock or public such as OpenWeather, GitHub) into a "landing" area (local folder or cloud bucket). Document schema and assumptions. Use generic patterns so the same approach works with different tools.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Two sources—file and API—cover the main ingestion patterns. Landing with a run id or date in the path keeps runs idempotent; a one-page doc (sources, frequency, schema, error handling) makes the flow maintainable and shareable.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Use case: Two sources → landing</div>
+        <svg viewBox="0 0 400 95" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr6" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="10" y="15" width="90" height="35" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="55" y="35" text-anchor="middle" font-size="11">CSV (URL or file)</text>
+            <rect x="10" y="55" width="90" height="35" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="55" y="75" text-anchor="middle" font-size="11">REST API (JSON)</text>
+            <line x1="100" y1="32" x2="145" y2="45" stroke="#667eea" marker-end="url(#arr6)"/>
+            <line x1="100" y1="72" x2="145" y2="60" stroke="#667eea" marker-end="url(#arr6)"/>
+            <rect x="145" y="25" width="110" height="55" rx="6" fill="#e8f0ff" stroke="#667eea" stroke-width="2"/>
+            <text x="200" y="50" text-anchor="middle" font-size="12" font-weight="bold">Landing area</text>
+            <text x="200" y="68" text-anchor="middle" font-size="10" fill="#666">run_id / date in path</text>
+            <line x1="255" y1="52" x2="295" y2="52" stroke="#667eea" marker-end="url(#arr6)"/>
+            <rect x="295" y="30" width="95" height="44" rx="4" fill="#d4edda" stroke="#28a745"/>
+            <text x="342" y="55" text-anchor="middle" font-size="10">Downstream</text>
+            <text x="342" y="68" text-anchor="middle" font-size="9" fill="#666">Bronze / Silver</text>
+        </svg>
+    </div>
+
+    <h3>Scenario in detail</h3>
+    <p>You will build a small ingestion flow with two sources. <strong>Source 1:</strong> A CSV file—either from a public URL (e.g. a sample sales or census dataset) or a file dropped in a folder. The pipeline reads it and writes it to a landing area (e.g. a folder or bucket, optionally with a date or run id in the path so multiple runs don't overwrite each other). <strong>Source 2:</strong> A REST API that returns JSON (e.g. OpenWeather, GitHub API, or a mock). You call the API (with auth if required), handle pagination if present, and write the response (or a normalized subset) to the landing area. For both sources, document: what you landed (schema or sample), how often you assume the job runs, and how you handle errors (e.g. missing file, API 500, empty response).</p>
+
+    <div class="worked-example">
+        <h4>Example: API call and land (Python pattern)</h4>
+        <p>One way to fetch a REST API and write to landing with a run id (idempotent per run):</p>
+        <div class="code-block">
+            <div class="code-lang">Python (conceptual)</div>
+            <pre><code>import requests
+import json
+from pathlib import Path
+from datetime import datetime
+
+def land_api(api_url: str, headers: dict, landing_dir: str) -> None:
+    run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    r = requests.get(api_url, headers=headers, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+    out = Path(landing_dir) / f"api_response_{run_id}.json"
+    with open(out, "w") as f:
+        json.dump(data, f, indent=2)
+    # If API paginates: loop with next_page_url until done; append or merge.</code></pre>
+        </div>
+        <p>Add retries (e.g. <code>tenacity</code> or a loop with backoff), handle pagination if the API returns <code>next_page</code>, and document the schema of the landed JSON for the one-page doc.</p>
+    </div>
+
+    <h4>Same idea in R: CSV and API to landing</h4>
+    <p>R can read a CSV from a URL and land it with a run id; <code>httr</code> or <code>jsonlite</code> for API calls.</p>
+    <div class="code-block">
+        <div class="code-lang">R (readr + httr): land CSV from URL and API response</div>
+        <pre><code>library(readr); library(httr); library(jsonlite)
+run_id <- format(Sys.time(), "%Y%m%d_%H%M%S")
+# Land CSV from URL
+csv_data <- read_csv("https://example.com/sample_sales.csv")
+write_csv(csv_data, paste0("landing/sales_", run_id, ".csv"))
+# Land API JSON
+r <- GET("https://api.example.com/data", add_headers(Authorization = "Bearer TOKEN"))
+api_data <- content(r, as = "parsed")
+write_json(api_data, paste0("landing/api_", run_id, ".json"))</code></pre>
+    </div>
+
+    <h3>Deliverables</h3>
+    <div class="example-box">
+        <ul>
+            <li><strong>Script or low-code flow</strong> that runs on demand and writes both sources to the landing area. The flow should be repeatable (running twice should not create duplicate data in an undefined way—e.g. overwrite by run id or use a unique key).</li>
+            <li><strong>One-page doc</strong> that includes: source names and types (CSV URL/path, API endpoint); frequency (e.g. daily, on-demand); schema or sample of landed data; error-handling approach (e.g. retry 3 times, then alert; if file missing, log and continue or fail).</li>
+        </ul>
+    </div>
+
+    <h3>By role</h3>
+    <div class="step-box">
+        <p><strong>Architect:</strong> Document an "ingestion decision matrix": when to use batch vs. stream, push vs. pull, and which landing pattern (object store vs. database). Add one scalability or cost consideration (e.g. what if CSV is 10x larger, or API rate limit drops?).</p>
+        <p><strong>Engineer:</strong> Implement the flow with retry logic for the API and one idempotency safeguard (e.g. write to a path that includes run timestamp so re-runs don't duplicate; or upsert by key). Add logging (e.g. row counts, errors) or a simple alert (e.g. if run fails).</p>
+        <p><strong>Analyst:</strong> Define a "data request" for a new source: business question you want to answer, required fields, acceptable latency (daily vs. hourly), and how you would validate the data once it lands (e.g. row count check, spot check a few values).</p>
+    </div>
+
+    <div class="success-box"><strong>Interactive wrap-up:</strong> Swap with another learner; run their ingestion (or review their doc and code) and suggest one improvement (e.g. add a timestamp column to landed data, handle empty API response, add a checksum or row count to the doc).</div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Implement two sources: CSV (URL or file) and REST API → same landing area with run id or date in path.</li>
+            <li>One-page doc: source names/types, frequency, schema or sample, error-handling approach.</li>
+            <li>Idempotency: overwrite by run id or upsert by key so re-runs don't duplicate data.</li>
+            <li>Handle empty response and API errors: log, optionally alert, document in the doc.</li>
+            <li>Landing feeds downstream (Bronze/Silver); keep raw format and document for transform stage.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Internal + external:</strong> Land internal CSV export and external API (e.g. weather, reference data) for a combined dataset.</li>
+        <li><strong>Documentation:</strong> Same one-page pattern for any new source so ops and analysts know what landed and when.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Section 3 (Modules 7–9) uses this landed data to build Bronze, Silver, and Gold layers in the medallion architecture.</div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What should the one-page doc for this use case include?</h4>
+            <ul class="quiz-options"><li>A) Only the script</li><li>B) Source names/types, frequency, schema or sample, and error-handling approach</li><li>C) Only the API URL</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Documentation ensures others can run, validate, and extend the ingestion.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: Why add an idempotency safeguard when landing data?</h4>
+            <ul class="quiz-options"><li>A) To make the job faster</li><li>B) So running the job twice doesn't create duplicates or inconsistent state</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Idempotency (e.g. overwrite by run id, or upsert by key) makes retries and re-runs safe.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is a good way to handle an empty API response?</h4>
+            <ul class="quiz-options"><li>A) Ignore it silently</li><li>B) Log it, optionally write an empty or placeholder file, and consider alerting if it's unexpected</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Logging and optional alerting help distinguish "no data today" from "API broken."</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: For the analyst role, what is a "data request" in this context?</h4>
+            <ul class="quiz-options"><li>A) A script</li><li>B) A short spec: business question, required fields, acceptable latency, and how to validate once landed</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> A data request aligns analysts and engineers on what to ingest and how to check it.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: Where does the landed data go in the pipeline lifecycle?</h4>
+            <ul class="quiz-options"><li>A) Directly to the report</li><li>B) Into a landing zone; downstream (e.g. Bronze/Silver/Gold) consume from there</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Landing is raw storage; transform and serve stages use it as input.</div>
+        </div>
+    </div>
+
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

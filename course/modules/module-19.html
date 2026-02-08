@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 19: Use Case — End-to-End Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .code-block { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+        .code-lang { background: #333; color: #9cdcfe; padding: 8px 12px; font-size: 0.9em; }
+        .code-block pre { margin: 0; padding: 16px; overflow-x: auto; }
+        .code-block code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h2>Module 19: Use Case — End-to-End Report</h2>
+
+    <h3>What This Use Case Covers</h3>
+    <p>Use the Gold (or curated) dataset from earlier sections. Build (1) one Power BI report (data model + 2–3 visuals + one DAX measure) and (2) one Tableau workbook (2 views + one dashboard with an action). Document data source and refresh. Generic reporting patterns.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> One report in each tool ties pipeline output to consumption. The report card (purpose, audience, refresh, one improvement) is the handoff document between engineer and analyst.
+    </div>
+
+    <h3>Scenario</h3>
+    <p>Connect to your Gold/curated table or mart. In Power BI: build a simple model (one fact, dimensions), add 2–3 visuals and one DAX measure (e.g. Revenue YoY %). In Tableau: create 2 views and one dashboard with at least one filter or highlight action. Document: purpose, audience, data source, refresh frequency, and one improvement to do next (“report card”).</p>
+    <h3>Deliverables</h3>
+    <div class="example-box">
+        <ul>
+            <li>PBIX and TWBX (or links to published reports).</li>
+            <li>One-page “report card”: purpose, audience, refresh, one improvement.</li>
+        </ul>
+    </div>
+
+    <h3>Data source for the report: Python and R</h3>
+    <p>Both Power BI and Tableau need a dataset—from a live connection (Gold/mart) or from a file. Prepare it in Python or R with the right grain and date range; one table or file both tools can use.</p>
+    <div class="code-block">
+        <div class="code-lang">Python: Gold export for Power BI and Tableau</div>
+        <pre><code>import pandas as pd
+df = pd.read_parquet("gold/daily_sales_by_region/")
+df = df[df["sale_date"] >= "2025-01-01"]
+df.to_parquet("report_input/sales_unified.parquet", index=False)</code></pre>
+    </div>
+    <div class="code-block">
+        <div class="code-lang">R: same flow</div>
+        <pre><code>library(arrow); library(dplyr)
+sales <- read_parquet("gold/daily_sales_by_region/") %>%
+  filter(sale_date >= as.Date("2025-01-01"))
+write_parquet(sales, "report_input/sales_unified.parquet")</code></pre>
+    </div>
+
+    <h3>By role</h3>
+    <div class="step-box">
+        <p><strong>Architect:</strong> Define report/dataset governance (who can publish, certification, refresh SLAs, RLS); review one report for compliance.</p>
+        <p><strong>Engineer:</strong> Document how the report connects to the pipeline (source table, refresh job); add or validate one performance safeguard.</p>
+        <p><strong>Analyst:</strong> Build both Power BI and Tableau deliverables; document report card; trace one visual back to pipeline column and quality check.</p>
+    </div>
+    <div class="success-box"><strong>Interactive wrap-up:</strong> Demo to a small group; collect one “what I’d add” from each viewer.</div>
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Power BI: model + 2–3 visuals + one DAX measure; Tableau: 2 views + one dashboard with action.</li>
+            <li>Report card: purpose, audience, data source, refresh frequency, one improvement.</li>
+            <li>Trace one visual back to pipeline column and quality check; document governance (publish, certification, RLS).</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Stakeholder demo:</strong> Same Gold table in Power BI and Tableau; report card for each; one next improvement from viewers.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Section 7 (Modules 20–22) is the capstone, simulation, and roadmap.</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What should the report card document?</h4>
+            <ul class="quiz-options"><li>A) Only the tool name</li><li>B) Purpose, audience, data source, refresh frequency, and one improvement</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Report card captures governance and next steps.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: Where should the report get its data from?</h4>
+            <ul class="quiz-options"><li>A) Bronze only</li><li>B) Gold or curated table/mart</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Reports consume business-ready data.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is a DAX measure example for this use case?</h4>
+            <ul class="quiz-options"><li>A) A column rename</li><li>B) Revenue YoY % or similar time/comparison measure</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Measures add business logic (e.g. YoY %).</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What Tableau deliverable is required?</h4>
+            <ul class="quiz-options"><li>A) Only one view</li><li>B) 2 views and one dashboard with at least one filter or highlight action</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Dashboard with actions demonstrates interactivity.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: Why demo and collect “what I’d add” from viewers?</h4>
+            <ul class="quiz-options"><li>A) To avoid improvements</li><li>B) To validate usability and gather improvement ideas</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Feedback improves adoption and next iterations.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

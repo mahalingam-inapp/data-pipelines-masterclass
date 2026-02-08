@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 8: Medallion Architecture & Incremental Processing</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .worked-example { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .worked-example h4 { color: #764ba2; margin-top: 0; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 8: Medallion Architecture & Incremental Processing</h2>
+
+    <h3>What Is the Medallion Architecture?</h3>
+    <p>The <strong>medallion architecture</strong> organizes data into three layers. <strong>Bronze</strong> is the raw copy of the source (as landed). <strong>Silver</strong> is cleaned, conformed, and integrated—one layer per entity or topic, ready for analytics. <strong>Gold</strong> is business-level aggregates and marts (KPIs, reporting tables). <strong>Incremental</strong> processing only reads and writes new or changed data using a key and watermark. <strong>SCD Type 1</strong> overwrites the current row; <strong>Type 2</strong> keeps history (new row per change with effective dates).</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Bronze keeps a raw audit trail; Silver is where you fix quality and join sources; Gold is what reports and dashboards use. Incremental processing and SCD types let you scale and track history without full refresh every time.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Medallion layers: Bronze → Silver → Gold</div>
+        <svg viewBox="0 0 480 100" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr8" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="20" y="25" width="120" height="50" rx="6" fill="#cd7f32" stroke="#8B4513" stroke-width="2"/>
+            <text x="80" y="52" text-anchor="middle" font-size="14" fill="white" font-weight="bold">Bronze</text>
+            <text x="80" y="68" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.9)">Raw, as landed</text>
+            <line x1="140" y1="50" x2="175" y2="50" stroke="#667eea" stroke-width="2" marker-end="url(#arr8)"/>
+            <rect x="175" y="25" width="120" height="50" rx="6" fill="#C0C0C0" stroke="#808080" stroke-width="2"/>
+            <text x="235" y="52" text-anchor="middle" font-size="14" fill="#333" font-weight="bold">Silver</text>
+            <text x="235" y="68" text-anchor="middle" font-size="10" fill="#444">Clean, conformed</text>
+            <line x1="295" y1="50" x2="330" y2="50" stroke="#667eea" stroke-width="2" marker-end="url(#arr8)"/>
+            <rect x="330" y="25" width="120" height="50" rx="6" fill="#FFD700" stroke="#B8860B" stroke-width="2"/>
+            <text x="390" y="52" text-anchor="middle" font-size="14" fill="#333" font-weight="bold">Gold</text>
+            <text x="390" y="68" text-anchor="middle" font-size="10" fill="#444">Aggregates, marts</text>
+            <text x="80" y="92" text-anchor="middle" font-size="9" fill="#666">audit, replay</text>
+            <text x="235" y="92" text-anchor="middle" font-size="9" fill="#666">analytics-ready</text>
+            <text x="390" y="92" text-anchor="middle" font-size="9" fill="#666">reports, KPIs</text>
+        </svg>
+    </div>
+
+    <h3>Medallion layers in detail</h3>
+    <div class="flow-step"><strong>Bronze:</strong> Raw copy of the source—same format, minimal or no transformation. Used for audit, replay, and reprocessing. Schema-on-read is common. Partition by date or source for efficient access. Retention policies (e.g. keep 90 days) help control cost.</div>
+    <div class="flow-step"><strong>Silver:</strong> Cleaned, typed, deduplicated, and often joined. One integrated table per business entity or event type (e.g. orders, customers, products). Column names and types are standardized; business rules (e.g. valid statuses) are applied. Silver is the layer analysts and Gold models typically read from. Partitioning and clustering (e.g. by date, key) improve query and incremental performance.</div>
+    <div class="flow-step"><strong>Gold:</strong> Aggregates, KPIs, and marts. Examples: daily sales by product and region, customer lifetime value, inventory snapshots. Grain is chosen for reporting (e.g. one row per product per day). Gold tables are often the direct source for dashboards and reports.</div>
+    <p><strong>When to add a layer:</strong> Bronze is standard for any pipeline that lands raw data. Silver is added when you need a single, clean integration layer (multiple sources → one entity). Gold is added when you need business metrics or mart-style tables. Schema evolution (new columns, deprecated columns) is easier when layers are separated: you can add a column in Bronze, then propagate to Silver and Gold with logic.</p>
+
+    <h3>Partitioning and clustering</h3>
+    <p>Partitioning (e.g. by date) lets you read and write only relevant partitions—essential for incremental loads and fast queries. Clustering (e.g. by key columns within a partition) orders data so that range queries and joins are more efficient. Define partitioning in your pipeline and table DDL so that downstream consumers benefit.</p>
+
+    <h3>Incremental processing</h3>
+    <p><strong>Full refresh</strong> rewrites the entire table each run. It's simple but expensive for large tables. <strong>Incremental</strong> processing only reads new or changed rows from the source (using a watermark, e.g. max(updated_at)) and merges them into the target. Merge/upsert semantics: insert new rows, update existing ones by key. You must handle <strong>late-arriving</strong> data (records with a timestamp in the past that arrive in a later run)—either by re-reading a window (e.g. last 2 days) or by accepting a delay. Out-of-order data (e.g. event B arrives before event A) may require windowing or idempotent merge logic.</p>
+
+    <h3>SCD Type 1 vs. Type 2</h3>
+    <div class="step-box">
+        <p><strong>Type 1 (overwrite):</strong> When a dimension attribute changes (e.g. customer address), overwrite the row. No history—only the current state is kept. Use when history is not needed (e.g. current address only).</p>
+        <p><strong>Type 2 (history):</strong> When an attribute changes, insert a new row with new effective dates (effective_from, effective_to) and keep the old row with its effective_to updated. Use when you need full history (e.g. customer segment over time for analytics). Surrogate keys help: the same business key can have multiple rows with different surrogate keys and date ranges.</p>
+    </div>
+
+    <h3>Bronze: raw copy from landing</h3>
+    <p>Bronze is a minimal transform: copy from landing and add ingestion metadata (e.g. <code>_ingested_at</code>, <code>_source_file</code>). That gives you an audit trail and lets you reprocess from raw. Example pattern:</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (Bronze copy)</div>
+        <pre><code>-- Bronze: append raw from landing with metadata
+INSERT INTO bronze.sales_raw
+SELECT *, current_timestamp() AS _ingested_at, 'sales_20250108.csv' AS _source_file
+FROM landing.sales_csv;
+
+-- Or read from path (e.g. Spark, dbt source): same idea, add _file_name and _ingested_at.</code></pre>
+    </div>
+    <p>Partition Bronze by date (e.g. <code>_ingested_date</code>) so incremental Silver can read only new partitions. Retention (e.g. 90 days) keeps cost under control.</p>
+
+    <h3>Incremental merge by key and watermark</h3>
+    <p>Silver and Gold often use a watermark: store the max <code>updated_at</code> (or similar) from the last run; next run process only rows where <code>updated_at > watermark</code>, then merge into the target by primary key. Example:</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (incremental merge pattern)</div>
+        <pre><code>-- 1. Get watermark (max updated_at already in Silver)
+-- 2. Read from Bronze only where updated_at > :watermark
+-- 3. Merge into Silver by order_id
+
+MERGE INTO silver.orders AS target
+USING (
+  SELECT order_id, customer_id, amount, status, updated_at
+  FROM bronze.orders_raw
+  WHERE updated_at > (SELECT COALESCE(MAX(updated_at), '1900-01-01') FROM silver.orders)
+) AS source
+ON target.order_id = source.order_id
+WHEN MATCHED AND source.updated_at > target.updated_at THEN
+  UPDATE SET customer_id = source.customer_id, amount = source.amount,
+             status = source.status, updated_at = source.updated_at
+WHEN NOT MATCHED THEN
+  INSERT (order_id, customer_id, amount, status, updated_at)
+  VALUES (source.order_id, source.customer_id, source.amount,
+          source.status, source.updated_at);</code></pre>
+    </div>
+    <p>Late-arriving rows (old <code>updated_at</code> but arrived late) can be handled by re-reading a window (e.g. last 2 days) or by a separate backfill job.</p>
+
+    <h3>SCD Type 2: full SQL example</h3>
+    <p>For a customer dimension with history: each change creates a new row with a new surrogate key; the previous row gets <code>effective_to</code> set. Reports use <code>effective_from <= report_date < effective_to</code> for "as of" logic.</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (SCD Type 2 pattern)</div>
+        <pre><code>-- Silver customer dimension: customer_sk (surrogate), customer_id (business key),
+-- name, segment, effective_from, effective_to, is_current
+
+-- Step 1: Close current row when source has a change
+UPDATE silver.dim_customer
+SET effective_to = :batch_date, is_current = 0
+WHERE customer_id IN (SELECT customer_id FROM staging_customer_updates)
+  AND is_current = 1;
+
+-- Step 2: Insert new rows for changed and new customers
+INSERT INTO silver.dim_customer (customer_sk, customer_id, name, segment, effective_from, effective_to, is_current)
+SELECT nextval('customer_sk_seq'), customer_id, name, segment, :batch_date, '9999-12-31', 1
+FROM staging_customer_updates;</code></pre>
+    </div>
+    <p>Surrogate key <code>customer_sk</code> is stable for joins; <code>customer_id</code> can have multiple rows over time. Query "customer as of 2025-01-01": <code>WHERE effective_from <= '2025-01-01' AND effective_to > '2025-01-01'</code>.</p>
+
+    <div class="worked-example">
+        <h4>Example: Silver to Gold (aggregate)</h4>
+        <p>Silver has clean, grain-level data (e.g. one row per order line). Gold aggregates for reporting (e.g. daily sales by product).</p>
+        <div class="code-block">
+            <div class="code-lang">SQL (conceptual)</div>
+            <pre><code>-- Gold: daily sales by product and region
+INSERT INTO gold.daily_sales_by_product
+SELECT
+  date_trunc('day', order_date) AS sale_date,
+  product_id,
+  region_id,
+  SUM(amount) AS revenue,
+  SUM(quantity) AS units_sold,
+  COUNT(DISTINCT order_id) AS order_count
+FROM silver.orders
+WHERE order_date >= :watermark
+GROUP BY 1, 2, 3;</code></pre>
+        </div>
+        <p>Run incrementally by setting <code>:watermark</code> to the max <code>sale_date</code> already in Gold, or do a full refresh for small tables.</p>
+    </div>
+
+    <h3>Do we need Bronze if we have a data lake?</h3>
+    <p>Yes, in most designs. Bronze is the first durable copy of raw data. It supports audit ("what did we receive?"), replay (re-run Silver/Gold from raw after a logic fix), and cost control (raw in cheap storage, processed in warehouse). Skipping Bronze and writing only to Silver means you lose the ability to reprocess from raw and may complicate compliance. The debate is often about retention (how long to keep Bronze) and cost, not whether to have it.</p>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Bronze = raw copy; Silver = cleaned, conformed, integrated; Gold = aggregates and marts.</li>
+            <li>Incremental: process only new/changed rows using a key and watermark (e.g. max updated_at).</li>
+            <li>SCD Type 1: overwrite current row; Type 2: keep history with effective_from / effective_to.</li>
+            <li>Document lineage (Bronze → Silver → Gold) and incremental strategy for each table.</li>
+            <li>Silver is the layer analysts and Gold depend on; get schema and keys right there.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Lakehouse:</strong> Land to Bronze, clean and join in Silver, build KPIs in Gold for BI.</li>
+        <li><strong>Customer dimension:</strong> SCD Type 2 in Silver so you can report "as of" any date.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 7 covered ETL basics; this module applies them to the medallion. Module 9 is the use case (Medallion in Practice). Section 4 (Modules 10–12) adds validation and quality.</div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What is the main purpose of the Bronze layer?</h4>
+            <ul class="quiz-options"><li>A) Pre-aggregate for reports</li><li>B) Keep a raw copy for audit, replay, and reprocessing</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Bronze holds raw data as landed; Silver and Gold are transformed.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is SCD Type 2 used for?</h4>
+            <ul class="quiz-options"><li>A) Encrypting data</li><li>B) Keeping full history of dimension changes (e.g. effective dates, multiple rows per business key)</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Type 2 keeps history; Type 1 overwrites.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: Why use partitioning (e.g. by date) in Silver or Gold?</h4>
+            <ul class="quiz-options"><li>A) To encrypt</li><li>B) To support incremental reads/writes and faster queries (partition pruning)</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Partitioning limits the data scanned and written each run.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What is late-arriving data?</h4>
+            <ul class="quiz-options"><li>A) Data that is encrypted</li><li>B) Records with a timestamp in the past that arrive in a later run, requiring special handling (e.g. re-read window)</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Late-arriving data can be handled by re-reading a time window or accepting a delay.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: Which layer do analysts and Gold models typically read from?</h4>
+            <ul class="quiz-options"><li>A) Only Bronze</li><li>B) Silver (cleaned, integrated); Gold is built from Silver and consumed by reports</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Silver is the main integration layer; Gold is for aggregates and marts consumed by reporting.</div>
+        </div>
+    </div>
+
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

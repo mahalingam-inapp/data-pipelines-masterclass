@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 11: Cleaning, Validation & Quality</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 11: Cleaning, Validation & Quality</h2>
+
+    <h3>What Are Cleaning, Validation, and Quality?</h3>
+    <p><strong>Cleaning</strong> fixes nulls, types, and formats. <strong>Validation</strong> checks rules (ranges, referential integrity, format). <strong>Staging</strong> tables are intermediate (raw → cleaned before Silver). <strong>Processed</strong> = post-Silver, ready for consumption; <strong>curated</strong> = business-approved and governed. Data quality = expectations (row count, nulls, uniqueness, freshness) and alerting.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> Quarantine failed rows instead of failing the whole pipeline. Define soft (warn) vs. hard (block) and document what you do with nulls and bad data so analysts know what they're looking at.
+    </div>
+
+    <h3>Cleaning and validation</h3>
+    <ul>
+        <li>Cleaning: standardize types, handle nulls, trim strings, normalize dates.</li>
+        <li>Validation: e.g. “email format”, “positive amount”, “key exists in dimension”; soft (warn) vs. hard (block) failures; quarantine table for bad rows.</li>
+    </ul>
+
+    <h3>Validation rules in SQL</h3>
+    <p>Split rows into "pass" and "fail": insert pass into Silver, fail into a quarantine table with a <code>fail_reason</code> (e.g. amount_negative, product_id_invalid). Example: only load rows where <code>amount >= 0</code> and <code>product_id IN (SELECT product_id FROM silver.dim_product)</code>; all others go to <code>quarantine.orders_failed</code> with a reason column. Alert when quarantine has rows so someone can fix and backfill.</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (quarantine DDL)</div>
+        <pre><code>CREATE TABLE quarantine.orders_failed (
+  order_id INT, product_id INT, amount DECIMAL(18,2), order_date DATE,
+  fail_reason VARCHAR(100), failed_at TIMESTAMP DEFAULT current_timestamp()
+);</code></pre>
+    </div>
+
+    <h3>Data quality checks (SQL examples)</h3>
+    <p>Run after load: uniqueness (no duplicate key), freshness (max date = today), and distribution (e.g. <code>SELECT COUNT(*) FROM gold.daily_sales WHERE revenue &lt; 0</code> should be 0). Wire into the DAG to fail the run or alert. dbt tests or Great Expectations express the same as config.</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (example checks)</div>
+        <pre><code>-- Uniqueness
+SELECT sale_date, product_id, COUNT(*) FROM gold.daily_sales
+GROUP BY sale_date, product_id HAVING COUNT(*) > 1;  -- expect 0 rows
+
+-- Freshness: latest = today
+SELECT MAX(sale_date) FROM gold.daily_sales;</code></pre>
+    </div>
+
+    <h3>Processed vs. curated</h3>
+    <p>Processed = Silver or Gold tables exposed to analysts. Curated = certified datasets for company-wide reporting; ownership and SLAs defined; PII handled (mask/restrict).</p>
+    <h3>Data quality and monitoring</h3>
+    <p>Expectations: row count, nulls, uniqueness, freshness. Implement as checks (e.g. SQL or frameworks like Great Expectations, Soda). Alert when checks fail; optionally block pipeline or release. Dashboards for pipeline health.</p>
+    <div class="highlight-box">If a critical column has 5% nulls, decide: fix at source, impute, or exclude — and document the choice.</div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Cleaning: standardize types, nulls, formats; validation: rules (range, format, referential integrity).</li>
+            <li>Quarantine failed rows; soft (warn) vs. hard (block); document and optionally backfill.</li>
+            <li>Processed = Silver/Gold for analysts; curated = certified, governed, with ownership and SLA.</li>
+            <li>Quality: row count, nulls, uniqueness, freshness; alert on failure; optional block or release.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Revenue pipeline:</strong> Validate revenue ≥ 0, product_id in dimension; quarantine bad rows; alert on row count drop.</li>
+        <li><strong>Customer table:</strong> Clean email format, dedupe by key; curated = certified for company-wide reporting.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 10 set engineering practices; this one focuses on validation and quality. Module 12 is the use case (From Raw to Curated).</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What is a quarantine table used for?</h4>
+            <ul class="quiz-options"><li>A) Storing old data</li><li>B) Storing rows that failed validation for later inspection</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Quarantine holds rejected rows so you can fix and backfill without blocking the pipeline.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is the difference between soft and hard validation?</h4>
+            <ul class="quiz-options"><li>A) Soft = warn and continue; hard = reject row or fail run</li><li>B) They are the same</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: A.</strong> Soft validation logs but continues; hard validation stops the row or the run.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is "curated" data?</h4>
+            <ul class="quiz-options"><li>A) Raw data only</li><li>B) Business-approved, documented, governed data (e.g. certified for company-wide reporting)</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Curated implies ownership, SLA, and certification.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What is a "freshness" check?</h4>
+            <ul class="quiz-options"><li>A) A check that data is cold</li><li>B) A check that data was updated within the expected time (e.g. max timestamp within SLA)</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Freshness ensures the pipeline ran and data is not stale.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: Why use staging tables?</h4>
+            <ul class="quiz-options"><li>A) To serve reports</li><li>B) To hold intermediate pipeline data before Silver; not exposed to analysts</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Staging is for pipeline-internal steps; Silver/Gold are for consumption.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

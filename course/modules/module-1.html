@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 1: What Is a Data Pipeline?</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .plain-terms strong { color: #764ba2; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .highlight { background: #fff3cd; padding: 2px 6px; border-radius: 3px; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .code-block code { font-family: 'Consolas', 'Monaco', monospace; }
+        .worked-example { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .worked-example h4 { color: #764ba2; margin-top: 0; }
+        .worked-example .before, .worked-example .after { padding: 12px; border-radius: 6px; margin: 10px 0; }
+        .worked-example .before { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .worked-example .after { background: #d4edda; border-left: 4px solid #28a745; }
+        .demo-box { background: #e8f4f8; border: 1px solid #667eea; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .demo-box summary { cursor: pointer; font-weight: bold; color: #667eea; }
+        .demo-box .demo-content { margin-top: 12px; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 1: What Is a Data Pipeline?</h2>
+
+    <h3>What Is a Data Pipeline?</h3>
+    <p>A <span class="highlight">data pipeline</span> is a set of steps that move and transform data from sources—databases, files, APIs, event streams—into a form that is ready for reporting, analytics, or machine learning. Think of it as an automated assembly line for data: raw inputs go in, and trusted, structured outputs come out on a schedule.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> A pipeline is not a one-off script. It is designed to run repeatedly (daily, hourly, or in real time), handle failures gracefully, and produce consistent, auditable results. When pipelines are done well, the business gets a single source of truth and faster, more reliable insights.
+    </div>
+
+    <h3>Why Pipelines Matter</h3>
+    <p>Without pipelines, teams often copy data by hand, merge spreadsheets in Excel, or run ad hoc scripts. That leads to inconsistent numbers, slow updates, and no clear audit trail. Pipelines automate the flow so that the right data is in the right place at the right time—so reports, dashboards, and models can depend on it.</p>
+
+    <div class="plain-terms">
+        <strong>Core terms:</strong> <strong>Ingest</strong> = read data in from sources. <strong>Transform</strong> = clean, join, aggregate, and apply business rules. <strong>Store</strong> = write to a warehouse, lake, or mart. <strong>Serve</strong> = expose data to reports, dashboards, or applications.
+    </div>
+
+    <h3>Pipeline vs. ETL vs. Data integration</h3>
+    <p>People often say "ETL" (Extract, Transform, Load) when they mean pipelines. <strong>ETL</strong> is a classic pattern: extract from sources, transform in a staging area, load into a target. A <strong>pipeline</strong> is the broader concept: it can be batch (run on a schedule, e.g. nightly) or streaming (continuous, event-driven). It may include more than one load target, orchestration, retries, and monitoring. <strong>Data integration</strong> is the discipline of connecting many sources and targets across the organization; pipelines are the concrete implementations that move and shape the data.</p>
+    <p>In practice, "data pipeline" and "ETL pipeline" are often used interchangeably when the flow is batch-oriented. When the flow is real-time (e.g. event streams), terms like "streaming pipeline" or "data flow" are common.</p>
+
+    <h3>Batch vs. streaming (high-level)</h3>
+    <p><strong>Batch pipelines</strong> run on a schedule (e.g. every night, every hour). They process a finite set of data (e.g. all records since the last run) and then complete. Batch is simpler to build and debug, and is sufficient when latency of hours or a day is acceptable (e.g. daily reports).</p>
+    <p><strong>Streaming pipelines</strong> process data continuously as it arrives (e.g. events from a message queue). They support low-latency use cases (e.g. real-time dashboards, fraud detection) but require different tooling and patterns (windowing, exactly-once semantics, backpressure). Many organizations start with batch and add streaming only when business needs demand it.</p>
+
+    <h3>Pipeline stages in detail</h3>
+    <div class="flow-step">1. <strong>Ingest</strong> — Pull or receive data from sources (databases, files, APIs, event streams). Data is typically landed in a raw form (e.g. in a landing zone or object store) so that it can be replayed or audited. Ingestion may be full (all data) or incremental (only new or changed records).</div>
+    <div class="flow-step">2. <strong>Transform</strong> — Clean (fix nulls, types, formats), reshape (join, pivot, aggregate), and enforce business rules (e.g. revenue ≥ 0, valid product IDs). Transform logic may live in SQL, a transform framework (e.g. dbt), or code (e.g. Spark). Output is usually written to intermediate or final tables (e.g. Silver and Gold in a medallion architecture).</div>
+    <div class="flow-step">3. <strong>Store</strong> — Write results to a data warehouse, data lake, or data mart in a structured way. Storage choices affect cost, performance, and who can query the data. Partitioning and clustering are used to optimize queries and incremental loads.</div>
+    <div class="flow-step">4. <strong>Serve</strong> — Make data available to reports, dashboards, APIs, or downstream systems. This may mean publishing a dataset, exposing a semantic layer, or triggering a refresh of a BI tool. Access control and row-level security are often applied at this stage.</div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Pipeline flow (stages)</div>
+        <svg viewBox="0 0 520 100" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="10" y="25" width="100" height="50" rx="6" fill="#e8f0ff" stroke="#667eea" stroke-width="2"/>
+            <text x="60" y="55" text-anchor="middle" font-size="12" fill="#333">Ingest</text>
+            <line x1="110" y1="50" x2="145" y2="50" stroke="#667eea" stroke-width="2" marker-end="url(#arrow)"/>
+            <rect x="145" y="25" width="100" height="50" rx="6" fill="#e8f0ff" stroke="#667eea" stroke-width="2"/>
+            <text x="195" y="55" text-anchor="middle" font-size="12" fill="#333">Transform</text>
+            <line x1="245" y1="50" x2="280" y2="50" stroke="#667eea" stroke-width="2" marker-end="url(#arrow)"/>
+            <rect x="280" y="25" width="100" height="50" rx="6" fill="#e8f0ff" stroke="#667eea" stroke-width="2"/>
+            <text x="330" y="55" text-anchor="middle" font-size="12" fill="#333">Store</text>
+            <line x1="380" y1="50" x2="415" y2="50" stroke="#667eea" stroke-width="2" marker-end="url(#arrow)"/>
+            <rect x="415" y="25" width="100" height="50" rx="6" fill="#e8f0ff" stroke="#667eea" stroke-width="2"/>
+            <text x="465" y="55" text-anchor="middle" font-size="12" fill="#333">Serve</text>
+            <text x="60" y="88" text-anchor="middle" font-size="10" fill="#666">DB, files, API</text>
+            <text x="195" y="88" text-anchor="middle" font-size="10" fill="#666">Clean, join</text>
+            <text x="330" y="88" text-anchor="middle" font-size="10" fill="#666">Warehouse</text>
+            <text x="465" y="88" text-anchor="middle" font-size="10" fill="#666">Reports</text>
+        </svg>
+    </div>
+
+    <p>Failure at any stage can break the pipeline: the source may be down, the schema may change, disk may fill, or a transform may produce wrong results. Reliability therefore depends on retries, alerting, idempotency, and clear ownership. Monitoring (e.g. run status, row counts, freshness) helps detect issues quickly.</p>
+
+    <h3>Example: Defining a simple pipeline</h3>
+    <p>Conceptually, a pipeline is described by <em>sources</em>, <em>steps</em>, and <em>schedule</em>. Below is a minimal YAML-style sketch (not tied to any specific tool)—enough to implement in code or an orchestrator.</p>
+    <div class="code-block">
+        <div class="code-lang">Pipeline definition (conceptual YAML)</div>
+        <pre><code>name: weekly_sales_report
+schedule: "0 6 * * 1"   # 6am every Monday
+sources:
+  - type: file
+    path: /exports/pos_sales.csv
+  - type: file
+    path: /exports/returns.csv
+steps:
+  - ingest: copy raw files to landing/
+  - transform: clean, join, aggregate → sales_summary
+  - load: write to warehouse.sales_weekly
+  - serve: refresh report "Sales Dashboard"</code></pre>
+    </div>
+    <p>The same flow in code: <strong>components</strong> are the ingest step (read sources), transform step (clean, join), and load step (write to target). <strong>Outcome</strong>: a single dataset ready for reports.</p>
+    <div class="code-block">
+        <div class="code-lang">Python: minimal pipeline (ingest → transform → store)</div>
+        <pre><code>import pandas as pd
+# 1. Ingest: read sources into landing
+sales = pd.read_csv("landing/pos_sales.csv")
+returns = pd.read_csv("landing/returns.csv")
+# 2. Transform: clean, join, aggregate
+sales["sale_date"] = pd.to_datetime(sales["sale_date"])
+merged = sales.merge(returns, on="order_id", how="left")
+summary = merged.groupby("sale_date").agg(revenue=("amount", "sum"), orders=("order_id", "nunique")).reset_index()
+# 3. Store: write to warehouse or file for reports
+summary.to_parquet("warehouse/sales_weekly.parquet", index=False)</code></pre>
+    </div>
+
+    <div class="worked-example">
+        <h4>Worked example: From spreadsheets to pipeline</h4>
+        <p><strong>Before:</strong> A team merges 3 CSV exports (sales, returns, inventory) in Excel every Monday. Manual, error-prone, no audit trail.</p>
+        <div class="before">
+            <strong>Inputs:</strong> sales.csv, returns.csv, inventory.csv (separate tabs or VLOOKUPs).<br>
+            <strong>Output:</strong> One Excel file e-mailed to stakeholders. No single source of truth.
+        </div>
+        <p><strong>After:</strong> One weekly pipeline that ingests the same CSVs, cleans and joins them, and writes one dataset. Reports connect to that dataset.</p>
+        <div class="after">
+            <strong>Inputs:</strong> Same 3 files, dropped in a folder or fetched by the pipeline.<br>
+            <strong>Output:</strong> One table <code>sales_weekly</code> in the warehouse; dashboard refreshes from it. Repeatable, auditable, one source of truth.
+        </div>
+    </div>
+
+    <div class="demo-box">
+        <details>
+            <summary>Try it: Draw the pipeline for “e-commerce orders”</summary>
+            <div class="demo-content">
+                <p>Imagine orders come from a database and a file export. Sketch boxes and arrows: where do orders land? Where do you clean/join? Where does the report read from?</p>
+                <p><strong>Example sketch:</strong> [Orders DB] + [Refunds CSV] → Ingest → Landing (raw) → Transform (join, dedup) → [orders_gold] → Store → Serve → [Order dashboard].</p>
+            </div>
+        </details>
+    </div>
+
+    <h3>Failure modes and why reliability matters</h3>
+    <p>Common failure modes include: <strong>source unavailable</strong> (API timeout, file missing), <strong>schema change</strong> (new required column, type change), <strong>data quality issues</strong> (unexpected nulls, duplicates), <strong>resource exhaustion</strong> (disk full, memory), and <strong>logic bugs</strong> (wrong join, wrong filter). When a pipeline fails, downstream reports and decisions may be stale or wrong. Reliability practices—retries, dead-letter queues, validation, and runbooks—reduce the impact and speed up recovery.</p>
+
+    <h3>Practical use cases</h3>
+    <div class="example-box">
+        <h4>Daily sales reporting</h4>
+        <p>Point-of-sale (POS) and e-commerce data are ingested nightly from transactional databases or file exports. The pipeline transforms them into a single sales table (e.g. one row per line item, with product and region dimensions), stores the result in a warehouse, and a dashboard or report connects to that table on a schedule. End users see consistent, up-to-date numbers every morning.</p>
+        <h4>Customer 360</h4>
+        <p>Data from CRM, support tickets, and billing are ingested (via APIs or exports), cleaned and joined on customer identifiers, and stored in a unified customer view. Analysts and downstream systems use this single view for segmentation, churn analysis, and personalization instead of manually combining spreadsheets.</p>
+        <h4>Regulatory reporting</h4>
+        <p>Finance or healthcare data are extracted from source systems, cleaned and validated against business rules, and output in the format and schedule required by regulators. Audit trails and lineage support compliance and audits.</p>
+    </div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>A data pipeline automates the flow from sources (DBs, files, APIs) to analytics-ready data.</li>
+            <li>It runs on a schedule and handles failures; it is not a one-off script.</li>
+            <li>Core stages: Ingest → Transform → Store → Serve.</li>
+            <li>Pipelines give the business a single source of truth and faster, more reliable insights.</li>
+            <li>Use cases include daily reporting, customer 360, and regulatory compliance.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <p>Pipelines power insights across industries:</p>
+    <ul>
+        <li><strong>Retail & e-commerce:</strong> POS + online sales → daily sales views and inventory dashboards.</li>
+        <li><strong>Finance:</strong> Ledgers and trades → regulatory reports and risk dashboards.</li>
+        <li><strong>Healthcare:</strong> EHR and claims → population health and compliance reporting.</li>
+        <li><strong>Marketing:</strong> CRM, ads, and web events → attribution and campaign performance.</li>
+        <li><strong>Operations:</strong> Sensors and logs → real-time monitoring and predictive maintenance.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Relationship to other modules:</strong> This module sets the foundation. Module 2 covers why pipelines matter (cost of bad data, ROI, governance) and roles (engineer, analyst, architect). Module 3 applies this with a use case (From Spreadsheets to Pipeline). Section 2 (Modules 4–6) dives into ingestion in detail—connectors, APIs, and reliability.
+    </div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: Which stage typically comes first in a data pipeline?</h4>
+            <ul class="quiz-options">
+                <li>A) Transform</li>
+                <li>B) Ingest</li>
+                <li>C) Serve</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B — Ingest.</strong> Data must be read from sources before it can be transformed, stored, or served. The ingest stage creates the raw input that downstream stages depend on.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is the main difference between a pipeline and a one-off script?</h4>
+            <ul class="quiz-options">
+                <li>A) Pipelines use SQL only</li>
+                <li>B) Pipelines are designed to run repeatedly and handle failures</li>
+                <li>C) One-off scripts are faster</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Pipelines are built for repeatability, reliability, and consistent outputs; they typically include scheduling, retries, and monitoring. One-off scripts are often ad hoc and not production-hardened.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: When is a batch pipeline usually sufficient compared to a streaming pipeline?</h4>
+            <ul class="quiz-options">
+                <li>A) When you need sub-second latency</li>
+                <li>B) When daily or hourly latency is acceptable (e.g. daily reports)</li>
+                <li>C) Only for very small datasets</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Batch runs on a schedule and processes a finite set of data; it is sufficient when end users can wait hours or a day for updated data. Streaming is for low-latency, continuous processing.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What is the "serve" stage of a pipeline responsible for?</h4>
+            <ul class="quiz-options">
+                <li>A) Ingesting raw data</li>
+                <li>B) Making data available to reports, dashboards, or downstream systems</li>
+                <li>C) Running the pipeline on a schedule</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Serve is the stage where processed data is exposed to consumers—e.g. by publishing a dataset, refreshing a BI tool, or applying access control and row-level security.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: Which of the following is a common pipeline failure mode?</h4>
+            <ul class="quiz-options">
+                <li>A) Source unavailable (e.g. API timeout, file missing)</li>
+                <li>B) Reports loading too quickly</li>
+                <li>C) Too many users viewing dashboards</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: A.</strong> Source unavailability, schema changes, data quality issues, and resource exhaustion are common failure modes. Reliability practices (retries, alerting, validation) help mitigate them.</div>
+        </div>
+    </div>
+
+    <script>
+        function showAnswer(n) {
+            var a = document.getElementById('answer-' + n);
+            var b = document.getElementById('btn-' + n);
+            if (a && b) { a.classList.add('show'); b.disabled = true; b.textContent = 'Answer Revealed'; }
+        }
+    </script>
+    <script>
+    (function() {
+        function sendHeight() {
+            try {
+                var body = document.body, html = document.documentElement;
+                var h = Math.max(body.scrollHeight, body.offsetHeight, html.scrollHeight, html.offsetHeight, html.clientHeight || 0);
+                if (h <= 0) return;
+                var path = window.location.pathname || window.location.href || '';
+                var m = path.match(/module-(\d+)\.html/);
+                if (m) window.parent.postMessage({ type: 'setIframeHeight', height: h, moduleId: parseInt(m[1], 10) }, '*');
+            } catch (e) {}
+        }
+        sendHeight();
+        setTimeout(sendHeight, 100);
+        setTimeout(sendHeight, 400);
+        setTimeout(sendHeight, 1000);
+    })();
+    </script>
+</body>
+</html>

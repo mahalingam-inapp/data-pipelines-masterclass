@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 3: Use Case — From Spreadsheets to Pipeline</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .plain-terms strong { color: #764ba2; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .worked-example { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .worked-example h4 { color: #764ba2; margin-top: 0; }
+        .demo-box { background: #e8f4f8; border: 1px solid #667eea; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .demo-box summary { cursor: pointer; font-weight: bold; color: #667eea; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>Module 3: Use Case — From Spreadsheets to Pipeline</h2>
+
+    <h3>What This Use Case Covers</h3>
+    <p>A small team currently merges three CSV exports (sales, returns, inventory) in Excel every Monday. The goal is to replace that manual process with one weekly pipeline that outputs a single dataset for reporting. This use case is vendor-agnostic: you move from manual spreadsheets to an automated, repeatable flow that you can later extend with validation, scheduling, and better storage.</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> The same steps you do by hand in Excel—read files, clean columns, join on keys, write one output—map directly to pipeline stages. Documenting "before vs. after" and who owns each step makes the value of automation clear to stakeholders.
+    </div>
+
+    <h3>Scenario in detail</h3>
+    <p><strong>Current state:</strong> Each week, three CSV files are produced—sales (transactions), returns (refunds or send-backs), and inventory (stock levels). These may come from different systems (e.g. POS, e-commerce, warehouse) or manual exports. Someone (often an analyst) opens them in Excel, aligns column names and formats, handles missing values, and joins them on common keys (e.g. product ID, date, store). The result is used for weekly reports. Problems: the process is manual and error-prone; if someone is out, the merge may be delayed; definitions can drift (e.g. "return" might be defined differently in different files).</p>
+    <p><strong>Target state:</strong> One pipeline that (1) reads the three CSVs from a designated folder (landing zone), (2) cleans and standardizes them, (3) joins them on agreed keys, and (4) writes one consolidated table or file for reporting. The pipeline runs on a schedule (e.g. every Monday) or on demand. Output is in a shared location or database so that reports always point to the same dataset. Ownership is clear (who fixes the pipeline if it fails?), and the "before vs. after" story can be documented for stakeholders.</p>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Use case: From 3 CSVs to one dataset</div>
+        <svg viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="10" y="20" width="70" height="32" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="45" y="38" text-anchor="middle" font-size="10">sales.csv</text>
+            <rect x="10" y="56" width="70" height="32" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="45" y="74" text-anchor="middle" font-size="10">returns.csv</text>
+            <rect x="10" y="92" width="70" height="32" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="45" y="110" text-anchor="middle" font-size="10">inventory.csv</text>
+            <line x1="80" y1="50" x2="115" y2="50" stroke="#667eea" marker-end="url(#arr3)"/>
+            <line x1="80" y1="72" x2="115" y2="72" stroke="#667eea" marker-end="url(#arr3)"/>
+            <line x1="80" y1="108" x2="115" y2="108" stroke="#667eea" marker-end="url(#arr3)"/>
+            <rect x="115" y="35" width="80" height="50" rx="6" fill="#e8f0ff" stroke="#667eea"/><text x="155" y="62" text-anchor="middle" font-size="11">Ingest</text>
+            <line x1="195" y1="60" x2="230" y2="60" stroke="#667eea" marker-end="url(#arr3)"/>
+            <rect x="230" y="35" width="80" height="50" rx="6" fill="#e8f0ff" stroke="#667eea"/><text x="270" y="62" text-anchor="middle" font-size="11">Clean</text>
+            <line x1="310" y1="60" x2="345" y2="60" stroke="#667eea" marker-end="url(#arr3)"/>
+            <rect x="345" y="35" width="80" height="50" rx="6" fill="#e8f0ff" stroke="#667eea"/><text x="385" y="62" text-anchor="middle" font-size="11">Join</text>
+            <line x1="425" y1="60" x2="460" y2="60" stroke="#667eea" marker-end="url(#arr3)"/>
+            <rect x="460" y="35" width="90" height="50" rx="6" fill="#d4edda" stroke="#28a745"/><text x="505" y="62" text-anchor="middle" font-size="11">Output</text>
+            <text x="505" y="95" text-anchor="middle" font-size="9" fill="#666">one table / file</text>
+        </svg>
+    </div>
+
+    <h3>Pipeline design (high level)</h3>
+    <div class="flow-step"><strong>Ingest</strong> — Read the three CSVs from a landing folder. Assume files appear there (e.g. dropped by another process or exported on a schedule). The pipeline should handle missing or empty files (e.g. alert or skip) and record what was read (e.g. file name, row count) for traceability.</div>
+    <div class="flow-step"><strong>Clean</strong> — Standardize column names (e.g. trim spaces, consistent casing), data types (dates, numbers), and formats. Handle missing values (drop, fill, or flag) and remove or flag duplicates. Document any assumptions (e.g. "we drop rows with null product_id").</div>
+    <div class="flow-step"><strong>Join</strong> — Combine sales, returns, and inventory on common keys (e.g. product_id, date, store_id). Decide join type (inner vs. left) and how to handle multiple rows (e.g. one row per product per day for inventory). The grain of the output (e.g. one row per transaction vs. per product per day) should match what reporting needs.</div>
+    <div class="flow-step"><strong>Output</strong> — Write one table or file (e.g. CSV in a shared drive, or a table in a database). Include a timestamp or run id so consumers know when the data was produced. Optionally add simple validation (e.g. row count in an expected range) before writing.</div>
+    <p>Later improvements (not required for this use case but good to note): add validation rules and a quarantine path for bad rows; add a data quality check (e.g. row count); schedule the pipeline; store the output in a warehouse and connect a BI tool.</p>
+
+    <div class="worked-example">
+        <h4>Example: Join step in SQL (conceptual)</h4>
+        <p>After cleaning, you have <code>sales_clean</code>, <code>returns_clean</code>, and <code>inventory_clean</code>. Join on <code>product_id</code> and <code>date</code> to get one row per product per day with sales, returns, and stock. Example pattern:</p>
+        <div class="code-block">
+            <div class="code-lang">SQL (conceptual)</div>
+            <pre><code>SELECT s.product_id, s.date, s.units_sold, r.units_returned, i.stock_qty
+FROM sales_clean s
+LEFT JOIN returns_clean r ON s.product_id = r.product_id AND s.date = r.date
+LEFT JOIN inventory_clean i ON s.product_id = i.product_id AND s.date = i.date</code></pre>
+        </div>
+        <p>Adjust to inner join if you only want product-dates present in all three. Add filters (e.g. valid product_id) and document the grain (e.g. one row per product per day).</p>
+    </div>
+
+    <h4>Same flow in Python and R</h4>
+    <p><strong>Process:</strong> Ingest (read 3 CSVs) → Clean (types, nulls) → Join (on product_id, date) → Output (one file). <strong>Outcome:</strong> one consolidated dataset for reporting.</p>
+    <div class="code-block">
+        <div class="code-lang">Python: ingest, clean, join, output</div>
+        <pre><code>import pandas as pd
+sales = pd.read_csv("landing/sales.csv"); sales["date"] = pd.to_datetime(sales["date"])
+returns = pd.read_csv("landing/returns.csv"); returns["date"] = pd.to_datetime(returns["date"])
+inv = pd.read_csv("landing/inventory.csv"); inv["date"] = pd.to_datetime(inv["date"])
+merged = sales.merge(returns, on=["product_id", "date"], how="left"
+    ).merge(inv, on=["product_id", "date"], how="left")
+merged.to_csv("output/consolidated.csv", index=False)</code></pre>
+    </div>
+    <div class="code-block">
+        <div class="code-lang">R: same flow (readr + dplyr)</div>
+        <pre><code>library(readr); library(dplyr)
+sales <- read_csv("landing/sales.csv") %>% mutate(date = as.Date(date))
+returns <- read_csv("landing/returns.csv") %>% mutate(date = as.Date(date))
+inv <- read_csv("landing/inventory.csv") %>% mutate(date = as.Date(date))
+merged <- sales %>% left_join(returns, by = c("product_id", "date")) %>%
+  left_join(inv, by = c("product_id", "date"))
+write_csv(merged, "output/consolidated.csv")</code></pre>
+    </div>
+
+    <div class="demo-box">
+        <details>
+            <summary>Try it: Fill in the one-page diagram template</summary>
+            <p>Draw (on paper or a board): (1) Three boxes for the three CSVs. (2) One box "Ingest" with an arrow from each CSV. (3) Boxes "Clean" and "Join" with arrows. (4) One box "Output" with label "consolidated table". Add one sentence under "Join": which keys? (e.g. product_id, date.) Add one sentence under "Output": where does the report read from?</p>
+        </details>
+    </div>
+
+    <h3>Deliverables</h3>
+    <div class="example-box">
+        <h4>What to produce</h4>
+        <ul>
+            <li>A one-page <strong>pipeline diagram</strong>: boxes for ingest → clean → join → output, with short labels (e.g. "Read sales.csv, returns.csv, inventory.csv"; "Standardize types, handle nulls"; "Join on product_id, date"; "Write consolidated.csv"). Arrows show flow and optionally data volumes or frequency.</li>
+            <li>A short <strong>before vs. after</strong> narrative: what was manual (who did what, how long, what could go wrong), what is automated (one run, one output), and what improvement you expect (e.g. consistency, time saved, fewer errors, single source for reporting).</li>
+        </ul>
+    </div>
+
+    <h3>By role</h3>
+    <div class="step-box">
+        <p><strong>Architect:</strong> Define a simple pipeline design checklist (sources, frequency, failure handling, ownership) and use it to review another team's diagram. Check for scalability (what if file size 10x?) and single points of failure (what if the landing folder is unavailable?).</p>
+        <p><strong>Engineer:</strong> Turn the one-page diagram into a minimal runnable spec: list inputs (file paths, formats), outputs (one table or file, schema), and at least one transform step in enough detail that someone could implement it. Note which component you would implement first (e.g. ingest + clean, then join, then output) and why.</p>
+        <p><strong>Analyst:</strong> Annotate the diagram with "where I would get my report data" (the output of the pipeline) and one question you would ask the engineer (e.g. "How fresh is this?" "What if a file is missing?" "How do I know which week this data is for?").</p>
+    </div>
+
+    <div class="success-box">
+        <strong>Interactive wrap-up:</strong> Peer review one other team's diagram. Suggest one concrete improvement (e.g. add validation, handle missing files, add a timestamp column to the output, document the join keys).
+    </div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Replace manual Excel merge with ingest → clean → join → output; one run, one dataset.</li>
+            <li>Clean step: standardize names, types, nulls, duplicates; join on agreed keys (e.g. product_id, date).</li>
+            <li>Produce a one-page diagram and a before vs. after narrative for stakeholders.</li>
+            <li>First improvements: validation, handle missing files, timestamp on output, document join keys.</li>
+            <li>Analyst and engineer align on join keys and grain; architect reviews for scalability and failure handling.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Weekly ops:</strong> Replace Monday-morning Excel merge of sales, returns, inventory with a scheduled pipeline.</li>
+        <li><strong>Multi-system reporting:</strong> Same pattern for CRM + support + billing → one customer view.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Relationship to other modules:</strong> This use case closes Section 1. Section 2 (Modules 4–6) goes deeper into ingestion: connectors, APIs, idempotency, and reliability—so you can implement the "ingest" step properly and extend beyond CSV files.
+    </div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: In this use case, what should the "clean" step do?</h4>
+            <ul class="quiz-options">
+                <li>A) Only rename columns</li>
+                <li>B) Standardize column names, types, and formats; handle missing values and duplicates</li>
+                <li>C) Join the three files</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Cleaning standardizes structure and content so the join and output are consistent and reliable.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: Why is a "before vs. after" narrative useful?</h4>
+            <ul class="quiz-options">
+                <li>A) It replaces the diagram</li>
+                <li>B) It explains what was manual, what is automated, and what improvement is expected—for stakeholders and prioritization</li>
+                <li>C) It is only for engineers</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> The narrative communicates value (time saved, consistency, single source) and helps align expectations.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What is a good first improvement to add after the basic pipeline works?</h4>
+            <ul class="quiz-options">
+                <li>A) Remove the join step</li>
+                <li>B) Add validation and handle missing or bad files (e.g. alert, quarantine)</li>
+                <li>C) Run the pipeline only once per year</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Validation and handling of missing or invalid data make the pipeline robust and easier to operate.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: Who should define the join keys (e.g. product_id, date) for the consolidated dataset?</h4>
+            <ul class="quiz-options">
+                <li>A) Only the engineer</li>
+                <li>B) Collaboration between analyst (business meaning) and engineer (implementation); keys must exist in all sources</li>
+                <li>C) Only the architect</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Join keys determine the grain and meaning of the output; analyst and engineer align on what is needed and what is feasible.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: What is the main benefit of automating this merge instead of doing it in Excel every week?</h4>
+            <ul class="quiz-options">
+                <li>A) Excel becomes unnecessary</li>
+                <li>B) Repeatability, consistency, less manual error, and a single output for reporting</li>
+                <li>C) Fewer files</li>
+            </ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Automation gives repeatable results, consistent definitions, and one place for reporting—reducing errors and dependency on one person.</div>
+        </div>
+    </div>
+
+    <script>
+        function showAnswer(n) {
+            var a = document.getElementById('answer-' + n);
+            var b = document.getElementById('btn-' + n);
+            if (a && b) { a.classList.add('show'); b.disabled = true; b.textContent = 'Answer Revealed'; }
+        }
+    </script>
+    <script>
+    (function() {
+        function sendHeight() {
+            try {
+                var body = document.body, html = document.documentElement;
+                var h = Math.max(body.scrollHeight, body.offsetHeight, html.scrollHeight, html.offsetHeight, html.clientHeight || 0);
+                if (h <= 0) return;
+                var path = window.location.pathname || window.location.href || '';
+                var m = path.match(/module-(\d+)\.html/);
+                if (m) window.parent.postMessage({ type: 'setIframeHeight', height: h, moduleId: parseInt(m[1], 10) }, '*');
+            } catch (e) {}
+        }
+        sendHeight();
+        setTimeout(sendHeight, 100);
+        setTimeout(sendHeight, 400);
+        setTimeout(sendHeight, 1000);
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 22: Roadmap & Next Steps</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+    </style>
+</head>
+<body>
+    <h2>Module 22: Roadmap & Next Steps</h2>
+    <div class="plain-terms">
+        <strong>In plain terms:</strong> You’ve covered the full pipeline lifecycle. Next steps depend on your role and goals: go deeper on <strong>streaming</strong>, <strong>ML pipelines</strong>, <strong>data mesh</strong>, or tool-specific certifications. Use self-assessment and resource-sharing to pick one area to deepen. No vendor or product endorsement — generic guidance only.
+    </div>
+    <h3>Where to go next</h3>
+    <ul>
+        <li><strong>Streaming</strong> — Real-time ingestion and processing (event streams, windowing, exactly-once).</li>
+        <li><strong>ML pipelines</strong> — Feature stores, training pipelines, model deployment and monitoring.</li>
+        <li><strong>Data mesh</strong> — Domain-oriented ownership, product thinking, federated governance.</li>
+        <li><strong>Tooling</strong> — Deeper dbt, orchestration (e.g. Airflow), cloud data services, or BI certifications.</li>
+    </ul>
+    <h3>Self-assessment</h3>
+    <div class="step-box">
+        <p>Rate your confidence (1–5) on: <strong>ingestion</strong>, <strong>ETL</strong>, <strong>storage</strong>, <strong>analytics</strong>. Identify one area to deepen and one resource (course, book, doc) to use next.</p>
+    </div>
+    <h3>Resource share</h3>
+    <p>Each participant can post one resource (course, book, tool doc) for the group. Build a short list the team can refer to after the masterclass.</p>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Next areas: streaming, ML pipelines, data mesh, or tool certifications—pick one to deepen.</li>
+            <li>Self-assessment: rate confidence on ingestion, ETL, storage, analytics; identify one resource.</li>
+            <li>Resource share: build a short list the team can refer to after the masterclass.</li>
+        </ul>
+    </div>
+
+    <div class="success-box">
+        <strong>You’ve completed the Data Pipelines Masterclass.</strong> Use the course plan (COURSE-PLAN.md) and role-specific appendix for ongoing reference and to run sessions with your team.
+    </div>
+    <div class="info-box"><strong>Relationship to other modules:</strong> This is the final module. Revisit any section (1–7) for deeper practice or use the capstone (Module 20) and simulation (Module 21) as templates for team exercises.</div>
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: What is a good next step after this masterclass?</h4>
+            <ul class="quiz-options"><li>A) Stop learning</li><li>B) Pick one area to deepen: streaming, ML pipelines, data mesh, or tool certifications</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Focused deepening beats scattered learning.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What does "data mesh" emphasize?</h4>
+            <ul class="quiz-options"><li>A) Single central team only</li><li>B) Domain-oriented ownership, product thinking, federated governance</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Data mesh distributes ownership by domain.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What should self-assessment cover?</h4>
+            <ul class="quiz-options"><li>A) Only one topic</li><li>B) Confidence on ingestion, ETL, storage, analytics; one area to deepen and one resource</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Self-assessment guides next learning steps.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: What does "streaming" as a next step include?</h4>
+            <ul class="quiz-options"><li>A) Only batch</li><li>B) Real-time ingestion, event streams, windowing, exactly-once semantics</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Streaming extends pipelines to real-time.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: How can you use the course after completion?</h4>
+            <ul class="quiz-options"><li>A) Only once</li><li>B) Use COURSE-PLAN.md and role appendix for reference; run sessions with your team; reuse capstone and simulation as templates</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> The course is a reusable reference and team resource.</div>
+        </div>
+    </div>
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>

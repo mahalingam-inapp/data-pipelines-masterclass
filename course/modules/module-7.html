@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 7: ETL Fundamentals</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
+        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
+        h3 { color: #764ba2; margin: 20px 0 10px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .plain-terms { background: #f0f7ff; border-left: 4px solid #764ba2; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .flow-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 10px 14px; border-radius: 4px; margin: 8px 0; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
+        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
+        .quiz-options { list-style: none; padding-left: 0; }
+        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
+        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
+        .quiz-answer.show { display: block; }
+        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .worked-example { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .worked-example h4 { color: #764ba2; margin-top: 0; }
+        .demo-box { background: #e8f4f8; border: 1px solid #667eea; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .demo-box summary { cursor: pointer; font-weight: bold; color: #667eea; }
+        .key-insight { background: linear-gradient(135deg, #f0f7ff 0%, #e8f0ff 100%); border-left: 4px solid #764ba2; padding: 18px 20px; border-radius: 6px; margin: 20px 0; font-size: 1.05em; line-height: 1.7; }
+        .key-insight strong { color: #764ba2; }
+        .key-takeaways { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 6px; margin: 24px 0; }
+        .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
+        .key-takeaways ul { margin: 0; padding-left: 22px; }
+        .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h2>Module 7: ETL Fundamentals</h2>
+
+    <h3>What Is ETL?</h3>
+    <p><strong>ETL</strong> stands for Extract, Transform, Load. <strong>Extract</strong> (ingestion) was covered in Section 2. <strong>Transform</strong> means clean (fix nulls, types, formats), reshape (pivot, join, aggregate), and deduplicate. <strong>Load</strong> means writing the result to a target—insert (append) or upsert/merge (insert new, update existing).</p>
+
+    <div class="key-insight">
+        <strong>Key insight:</strong> The order of transforms matters. Filter out invalid rows before deduplicating so you don't keep invalid duplicates; clean types before joining so keys match. One consistent sequence gives repeatable, correct results.
+    </div>
+
+    <div class="diagram-box">
+        <div class="diagram-title">Transform flow (order matters)</div>
+        <svg viewBox="0 0 540 75" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs><marker id="arr7" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+            <rect x="5" y="22" width="75" height="32" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="42" y="42" text-anchor="middle" font-size="10">Filter</text>
+            <line x1="80" y1="38" x2="108" y2="38" stroke="#667eea" marker-end="url(#arr7)"/>
+            <rect x="108" y="22" width="75" height="32" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="145" y="42" text-anchor="middle" font-size="10">Map</text>
+            <line x1="183" y1="38" x2="211" y2="38" stroke="#667eea" marker-end="url(#arr7)"/>
+            <rect x="211" y="22" width="75" height="32" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="248" y="42" text-anchor="middle" font-size="10">Join</text>
+            <line x1="286" y1="38" x2="314" y2="38" stroke="#667eea" marker-end="url(#arr7)"/>
+            <rect x="314" y="22" width="85" height="32" rx="4" fill="#e8f0ff" stroke="#667eea"/><text x="356" y="42" text-anchor="middle" font-size="10">Aggregate</text>
+            <line x1="399" y1="38" x2="427" y2="38" stroke="#667eea" marker-end="url(#arr7)"/>
+            <rect x="427" y="22" width="75" height="32" rx="4" fill="#d4edda" stroke="#28a745"/><text x="464" y="42" text-anchor="middle" font-size="10">Load</text>
+            <text x="42" y="65" text-anchor="middle" font-size="9" fill="#666">drop invalid</text>
+            <text x="145" y="65" text-anchor="middle" font-size="9" fill="#666">types, names</text>
+            <text x="248" y="65" text-anchor="middle" font-size="9" fill="#666">enrich</text>
+            <text x="356" y="65" text-anchor="middle" font-size="9" fill="#666">SUM, COUNT</text>
+            <text x="464" y="65" text-anchor="middle" font-size="9" fill="#666">upsert</text>
+        </svg>
+    </div>
+
+    <h3>Transform patterns in detail</h3>
+    <p><strong>Filter:</strong> Remove rows that don't meet criteria (e.g. exclude null product_id, or only keep status = 'completed'). Filtering early reduces the volume for downstream steps and avoids propagating bad data.</p>
+    <p><strong>Map:</strong> Rename columns for consistency, convert data types (string to date, string to number), standardize formats (trim spaces, uppercase codes), and add derived columns (e.g. year = YEAR(date), full_name = first || ' ' || last). Mapping makes the dataset conform to a schema that the rest of the pipeline and reporting expect.</p>
+    <p><strong>Aggregate:</strong> Group by one or more dimensions and compute measures (SUM, COUNT, AVG, MIN, MAX). Example: sales by product and region, or daily active users by country. Aggregation reduces row count and is typical for Gold-layer metrics.</p>
+    <p><strong>Join:</strong> Combine two or more tables on keys (e.g. product_id, customer_id). Inner join keeps only matching rows; left join keeps all from the left and fills nulls where there's no match. Joins are used to enrich facts with dimensions or to combine multiple sources into one dataset.</p>
+    <p><strong>Dedup:</strong> Keep one row per key (e.g. one row per order_id, keeping the latest by updated_at). Deduplication is essential when the source can send the same record multiple times (e.g. API or CDC) or when you merge overlapping extracts.</p>
+    <p><strong>Surrogate keys:</strong> Add a stable, system-generated ID (e.g. an integer or UUID) to dimension tables so that business keys (e.g. product_code) can change without breaking foreign keys. Surrogate keys are common in star schemas for dimensions.</p>
+
+    <h3>Why transform order matters</h3>
+    <p>Apply filter before dedup so you don't waste effort deduplicating invalid rows. Apply type conversion and cleaning before join so keys match (e.g. both sides numeric). Aggregate only after you have the correct grain (e.g. after joining to dimensions). Document the order in your pipeline or transform specs so others can reason about correctness.</p>
+
+    <h3>Load: insert vs. upsert</h3>
+    <p><strong>Insert (append):</strong> Add new rows only. Use when the source is append-only (e.g. event log) or when you replace a partition or table each run (full refresh). <strong>Upsert/merge:</strong> Insert new rows and update existing ones based on a key. Use for incremental loads when the source can update or re-send records. The target must support merge semantics (e.g. MERGE in SQL, or overwrite by partition).</p>
+
+    <div class="worked-example">
+        <h4>Example: Bronze to Silver in SQL (conceptual)</h4>
+        <p>Read from Bronze (raw), filter invalid rows, cast types, deduplicate by key, write to Silver.</p>
+        <div class="code-block">
+            <div class="code-lang">SQL (conceptual)</div>
+            <pre><code>-- Silver: one row per order_id, latest by updated_at
+INSERT INTO silver.orders
+SELECT order_id, customer_id, amount, status, updated_at
+FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY updated_at DESC) AS rn
+  FROM bronze.orders_raw
+  WHERE order_id IS NOT NULL AND amount >= 0
+) t
+WHERE rn = 1;</code></pre>
+        </div>
+    </div>
+
+    <h3>Practical example: Filter, map, and add column (Python)</h3>
+    <p>When you work with files or DataFrames, the same ETL ideas apply. Below: read a CSV, filter invalid rows, standardize types and names (map), add a derived column, then write the result. This mirrors what a transform step does in a pipeline.</p>
+    <div class="code-block">
+        <div class="code-lang">Python (pandas)</div>
+        <pre><code>import pandas as pd
+
+# Read raw
+df = pd.read_csv("landing/sales.csv")
+
+# Filter: drop rows with missing key or invalid amount
+df = df[df["product_id"].notna() & (df["amount"] >= 0)]
+
+# Map: standardize names and types
+df = df.rename(columns={"OrderDate": "order_date", "Amt": "amount"})
+df["order_date"] = pd.to_datetime(df["order_date"])
+df["amount"] = df["amount"].astype("float64")
+
+# Add derived column
+df["sale_year"] = df["order_date"].dt.year
+
+# Load: write to Silver (e.g. Parquet or DB)
+df.to_parquet("silver/sales.parquet", index=False)</code></pre>
+    </div>
+    <p>Order of operations: filter first (so you don't propagate bad rows), then map (so types and names are consistent), then derive, then load. In a real pipeline you might also deduplicate by <code>order_id</code> (e.g. <code>df.drop_duplicates(subset=["order_id"], keep="last")</code>) before writing.</p>
+
+    <h3>Load: MERGE / upsert in SQL</h3>
+    <p>For incremental loads, you often need to <strong>merge</strong>: insert new rows and update existing ones by key. Standard SQL uses <code>MERGE</code> (or vendor equivalents like <code>INSERT ... ON CONFLICT</code>). Example:</p>
+    <div class="code-block">
+        <div class="code-lang">SQL (MERGE pattern)</div>
+        <pre><code>-- Upsert into Silver by order_id: insert new, update existing
+MERGE INTO silver.orders AS target
+USING (
+  SELECT order_id, customer_id, amount, status, updated_at
+  FROM bronze.orders_staging
+  WHERE order_id IS NOT NULL AND amount >= 0
+) AS source
+ON target.order_id = source.order_id
+WHEN MATCHED AND target.updated_at < source.updated_at THEN
+  UPDATE SET customer_id = source.customer_id, amount = source.amount,
+             status = source.status, updated_at = source.updated_at
+WHEN NOT MATCHED THEN
+  INSERT (order_id, customer_id, amount, status, updated_at)
+  VALUES (source.order_id, source.customer_id, source.amount,
+          source.status, source.updated_at);</code></pre>
+    </div>
+    <p>Not all warehouses use <code>MERGE</code>; some use <code>INSERT ... ON CONFLICT (key) DO UPDATE</code> or a delete+insert pattern by partition. The idea is the same: one key per row, and the latest version wins.</p>
+
+    <h3>Testing transforms: example assertions</h3>
+    <p>Tests can be SQL assertions or framework config. Below: dbt-style schema tests that run after a model builds. They ensure uniqueness, no nulls in keys, and that foreign keys exist in the dimension.</p>
+    <div class="code-block">
+        <div class="code-lang">dbt schema tests (schema.yml)</div>
+        <pre><code># After silver.orders is built, run these tests
+version: 2
+models:
+  - name: silver_orders
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: product_id
+        tests: [not_null, relationships:
+                to: ref('dim_product')
+                field: product_id]
+      - name: amount
+        tests: [not_null]  # plus custom: amount >= 0 if needed</code></pre>
+    </div>
+    <p>If any test fails, the run can fail (or alert), so bad data does not reach Gold or reports. Add row-count checks (e.g. "today's rows within 10% of yesterday") as custom tests or in a separate quality step.</p>
+
+    <div class="demo-box">
+        <details>
+            <summary>Try it: Why filter before dedup?</summary>
+            <p>If you dedup first, you might keep one "valid" and one "invalid" row per key (e.g. two rows for order_id=1: one with amount=-100, one with amount=100). Filter first so only valid rows (e.g. amount &gt;= 0) remain; then dedup. Result: one correct row per key.</p>
+        </details>
+    </div>
+
+    <h3>Testing transforms</h3>
+    <p>Use row counts (e.g. expect roughly the same or within a range), checksums (hash of key columns), or sample comparisons (spot-check a few rows) to validate that transforms produce expected results. Many teams use SQL-based tests (e.g. "no nulls in product_id") or a transform framework (e.g. dbt) with built-in tests for uniqueness, not-null, and relationships. Tests should run in CI or on a schedule so regressions are caught early.</p>
+
+    <h3>Practical use cases</h3>
+    <div class="example-box">
+        <ul>
+            <li><strong>Normalizing product catalog from multiple sources:</strong> Each source has different column names and formats; map to a common schema, dedup by product key, and load to a single product dimension.</li>
+            <li><strong>Building a daily snapshot of "customer state":</strong> Join CRM, support, and billing data on customer_id; filter to active customers; aggregate or take latest row per customer; load to a customer snapshot table.</li>
+            <li><strong>Aggregating clickstream to session-level metrics:</strong> Filter to valid events; group by session_id; compute counts and durations; load to a sessions table for analytics.</li>
+        </ul>
+    </div>
+
+    <div class="worked-example">
+        <h4>Worked example: Normalizing product catalog from two sources</h4>
+        <p><strong>Scenario:</strong> Source A has <code>ProductID</code>, <code>Name</code>, <code>Price</code>; Source B has <code>product_code</code>, <code>product_name</code>, <code>unit_price</code>. You want one Silver table <code>silver.products</code> with columns <code>product_id</code>, <code>product_name</code>, <code>price</code>, and <code>source</code>.</p>
+        <p><strong>Steps:</strong> (1) Map each source to the common schema (rename, cast types). (2) Union the two DataFrames or SELECTs. (3) Deduplicate by <code>product_id</code> (or business key), e.g. keep latest by <code>updated_at</code>. (4) Load to Silver.</p>
+        <div class="code-block">
+            <div class="code-lang">SQL (conceptual)</div>
+            <pre><code>-- Map source A and B to common schema, then dedup
+WITH mapped AS (
+  SELECT ProductID AS product_id, Name AS product_name, Price AS price, 'A' AS source
+  FROM bronze.products_source_a
+  WHERE ProductID IS NOT NULL
+  UNION ALL
+  SELECT product_code AS product_id, product_name, unit_price AS price, 'B' AS source
+  FROM bronze.products_source_b
+  WHERE product_code IS NOT NULL
+),
+deduped AS (
+  SELECT * FROM (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY source) AS rn
+    FROM mapped
+  ) t WHERE rn = 1
+)
+INSERT INTO silver.products SELECT product_id, product_name, price, source FROM deduped;</code></pre>
+        </div>
+        <p>In practice you might use a proper merge key (e.g. <code>product_id</code> + <code>source</code>) or business rules for which source wins when both have the same ID. Tests: <code>product_id</code> unique, <code>price > 0</code>.</p>
+    </div>
+
+    <div class="key-takeaways">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>ETL: Extract (ingest), Transform (clean, reshape, dedup), Load (insert or upsert to target).</li>
+            <li>Transform order: filter invalid rows before dedup; clean types before join.</li>
+            <li>Load: append for append-only; upsert/merge when you need to update existing rows by key.</li>
+            <li>Idempotent load: same run twice → same result; use unique keys and merge semantics.</li>
+            <li>Document assumptions (e.g. "drop rows with null product_id") for maintainability.</li>
+        </ul>
+    </div>
+
+    <h3>Real-World Applications</h3>
+    <ul>
+        <li><strong>Reporting tables:</strong> Clean and join landing data, dedupe by business key, load to warehouse table with upsert.</li>
+        <li><strong>Aggregations:</strong> Transform raw events into daily rollups; load as full refresh or incremental by date.</li>
+    </ul>
+
+    <div class="info-box"><strong>Relationship to other modules:</strong> Module 8 covers the medallion architecture (Bronze, Silver, Gold) and incremental processing; Module 9 is the use case (Medallion in Practice). Section 4 (Modules 10–12) adds validation and quality.</div>
+
+    <div class="quiz-section">
+        <h3>Module Quiz</h3>
+        <div class="quiz-question">
+            <h4>Q1: Which transform should typically run first: dedup or filter?</h4>
+            <ul class="quiz-options"><li>A) Dedup</li><li>B) Filter</li></ul>
+            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
+            <div class="quiz-answer" id="answer-1"><strong>Correct: B — Filter.</strong> Filter out invalid rows first so you don't deduplicate or aggregate bad data.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q2: What is an upsert/merge in the load step?</h4>
+            <ul class="quiz-options"><li>A) Delete all data</li><li>B) Insert new rows and update existing rows based on a key</li></ul>
+            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
+            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Upsert is used for incremental loads when the source can update or re-send records.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q3: What are surrogate keys used for?</h4>
+            <ul class="quiz-options"><li>A) Encrypting data</li><li>B) Stable system-generated IDs for dimensions so business keys can change without breaking references</li></ul>
+            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
+            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Surrogate keys (e.g. integer IDs) isolate the warehouse from changes in business keys.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q4: Why is testing transforms important?</h4>
+            <ul class="quiz-options"><li>A) To make the job slower</li><li>B) To catch regressions (wrong logic, schema changes) early via row counts, checksums, or assertion tests</li></ul>
+            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
+            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Tests validate correctness and catch bugs before they affect reports.</div>
+        </div>
+        <div class="quiz-question">
+            <h4>Q5: When would you use "insert only" vs. "upsert" for the load step?</h4>
+            <ul class="quiz-options"><li>A) Insert only for append-only or full refresh; upsert for incremental when source can update</li><li>B) Always upsert</li><li>C) Always insert only</li></ul>
+            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
+            <div class="quiz-answer" id="answer-5"><strong>Correct: A.</strong> Insert/append fits event logs or full refresh; upsert fits incremental sync with updates.</div>
+        </div>
+    </div>
+
+    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+</body>
+</html>
