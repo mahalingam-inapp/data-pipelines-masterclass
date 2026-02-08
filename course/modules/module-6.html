@@ -36,6 +36,10 @@
         .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
         .key-takeaways ul { margin: 0; padding-left: 22px; }
         .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 8px 10px; text-align: left; font-size: 0.9em; }
+        td { padding: 8px 10px; border: 1px solid #e0e0e0; font-size: 0.9em; }
+        tr:nth-child(even) { background: #f8f9fa; }
     </style>
 </head>
 <body>
@@ -68,6 +72,70 @@
 
     <h3>Scenario in detail</h3>
     <p>You will build a small ingestion flow with two sources. <strong>Source 1:</strong> A CSV file—either from a public URL (e.g. a sample sales or census dataset) or a file dropped in a folder. The pipeline reads it and writes it to a landing area (e.g. a folder or bucket, optionally with a date or run id in the path so multiple runs don't overwrite each other). <strong>Source 2:</strong> A REST API that returns JSON (e.g. OpenWeather, GitHub API, or a mock). You call the API (with auth if required), handle pagination if present, and write the response (or a normalized subset) to the landing area. For both sources, document: what you landed (schema or sample), how often you assume the job runs, and how you handle errors (e.g. missing file, API 500, empty response).</p>
+
+    <h3>Sample source data and outputs (Bronze / Silver)</h3>
+    <p>Below is <strong>dummy data</strong> for the two sources and how they look after landing (Bronze) and after a simple clean (Silver). Use these as a reference for schema and for your one-page doc.</p>
+
+    <h4>Source 1: Sample CSV (sales export)</h4>
+    <p>Assume the CSV is from a sales system: one row per order line, with mixed casing and a possible empty value.</p>
+    <div class="code-block">
+        <div class="code-lang">Sample CSV (source file or URL response)</div>
+        <pre><code>order_id,OrderDate,product_id,quantity,amount
+ORD-001,2025-02-01,P101,2,49.98
+ORD-002,2025-02-01,P102,1,29.99
+ORD-003,2025-02-02,P101,,19.99</code></pre>
+    </div>
+
+    <h4>Source 2: Sample JSON (API response)</h4>
+    <p>Assume the API returns a list of orders with nested line items.</p>
+    <div class="code-block">
+        <div class="code-lang">Sample JSON (API response)</div>
+        <pre><code>{
+  "fetch_time": "2025-02-08T06:00:00Z",
+  "orders": [
+    {
+      "id": "ORD-101",
+      "created_at": "2025-02-07T14:30:00Z",
+      "lines": [
+        { "product_id": "P201", "qty": 1, "unit_price": 15.00 },
+        { "product_id": "P202", "qty": 2, "unit_price": 10.00 }
+      ]
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <h4>After ingestion: Bronze (landing / raw copy)</h4>
+    <p>Bronze stores the data <strong>as-is</strong> plus optional metadata (e.g. <code>_ingested_at</code>, <code>_source_file</code>) so you can replay and audit. The CSV might be written to a single file per run; the JSON might be written as one file per run or one file per API response.</p>
+    <div class="step-box">
+        <p><strong>Bronze – CSV landed:</strong> Same content as the source CSV, written to e.g. <code>landing/sales/sales_20250208_060001.csv</code>. Optionally add columns in a table form:</p>
+        <table style="margin-top: 8px;">
+            <tr><th>order_id</th><th>OrderDate</th><th>product_id</th><th>quantity</th><th>amount</th><th>_ingested_at</th><th>_source_file</th></tr>
+            <tr><td>ORD-001</td><td>2025-02-01</td><td>P101</td><td>2</td><td>49.98</td><td>2025-02-08 06:00:01</td><td>sales_20250208_060001.csv</td></tr>
+            <tr><td>ORD-002</td><td>2025-02-01</td><td>P102</td><td>1</td><td>29.99</td><td>2025-02-08 06:00:01</td><td>sales_20250208_060001.csv</td></tr>
+            <tr><td>ORD-003</td><td>2025-02-02</td><td>P101</td><td></td><td>19.99</td><td>2025-02-08 06:00:01</td><td>sales_20250208_060001.csv</td></tr>
+        </table>
+        <p style="margin-top: 10px;"><strong>Bronze – JSON landed:</strong> Full API response saved to e.g. <code>landing/api_orders/api_20250208_060001.json</code> (unchanged). No schema applied yet—downstream will parse and flatten.</p>
+    </div>
+
+    <h4>After transform: Silver (cleaned, typed, flattened)</h4>
+    <p>Silver applies cleaning and a consistent schema. CSV: standardize column names, types (date, int, decimal), handle nulls. JSON: flatten nested <code>orders</code> and <code>lines</code> into one row per line, with order-level fields repeated.</p>
+    <div class="step-box">
+        <p><strong>Silver – from CSV:</strong> Same grain (one row per order line), but column names and types standardized; null quantity could be filled or flagged.</p>
+        <table style="margin-top: 8px;">
+            <tr><th>order_id</th><th>order_date</th><th>product_id</th><th>quantity</th><th>amount</th></tr>
+            <tr><td>ORD-001</td><td>2025-02-01</td><td>P101</td><td>2</td><td>49.98</td></tr>
+            <tr><td>ORD-002</td><td>2025-02-01</td><td>P102</td><td>1</td><td>29.99</td></tr>
+            <tr><td>ORD-003</td><td>2025-02-02</td><td>P101</td><td>NULL</td><td>19.99</td></tr>
+        </table>
+        <p style="margin-top: 10px;"><strong>Silver – from JSON (flattened):</strong> One row per line item; order id and created_at brought to the row level.</p>
+        <table style="margin-top: 8px;">
+            <tr><th>order_id</th><th>created_at</th><th>product_id</th><th>qty</th><th>unit_price</th><th>line_total</th></tr>
+            <tr><td>ORD-101</td><td>2025-02-07 14:30:00</td><td>P201</td><td>1</td><td>15.00</td><td>15.00</td></tr>
+            <tr><td>ORD-101</td><td>2025-02-07 14:30:00</td><td>P202</td><td>2</td><td>10.00</td><td>20.00</td></tr>
+        </table>
+        <p style="margin-top: 10px; font-size: 0.95em;">In a full pipeline you might merge both Silver tables (e.g. union by a common key or use both in a join) before building Gold. For this use case, landing and documenting the Bronze output is enough; Silver is shown so you see the end-to-end shape.</p>
+    </div>
 
     <div class="worked-example">
         <h4>Example: API call and land (Python pattern)</h4>
@@ -132,6 +200,7 @@ write_json(api_data, paste0("landing/api_", run_id, ".json"))</code></pre>
             <li>Idempotency: overwrite by run id or upsert by key so re-runs don't duplicate data.</li>
             <li>Handle empty response and API errors: log, optionally alert, document in the doc.</li>
             <li>Landing feeds downstream (Bronze/Silver); keep raw format and document for transform stage.</li>
+            <li>Use sample CSV and JSON (and their Bronze/Silver outputs) in your doc to document schema and expectations.</li>
         </ul>
     </div>
 

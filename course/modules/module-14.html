@@ -35,6 +35,7 @@
         .code-block pre { margin: 0; padding: 16px; overflow-x: auto; }
         .code-block code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; }
         .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
     </style>
 </head>
 <body>
@@ -46,6 +47,95 @@
     <div class="key-insight">
         <strong>Key insight:</strong> Partition by date for incremental loads and partition pruning; cluster for common filters. Build a mart when a team needs a dedicated view; add a cube when dashboard latency or concurrency demands it.
     </div>
+
+    <h3>Same dummy data, different storage types: how it is represented</h3>
+    <p>Using the <strong>NorthStar Retail</strong> scenario: the pipeline produces Gold with daily sales by product and region. Below is one consistent <strong>dummy source dataset</strong>, then how that same data is <strong>represented</strong> in each storage type (warehouse, lake, mart, cube, lakehouse).</p>
+
+    <h4>Dummy source data (Gold-level outcome)</h4>
+    <p>After Bronze → Silver → Gold, the business has three rows for 2025-01-08:</p>
+    <div class="example-box">
+        <table>
+            <tr><th>sale_date</th><th>product_id</th><th>product_name</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>P1</td><td>Widget Pro</td><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>2025-01-08</td><td>P2</td><td>Basic Cable</td><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>P3</td><td>Power Pack</td><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">This is the logical “Gold” result. Below: how this same information is stored and accessed in each storage type.</p>
+    </div>
+
+    <h4>1. In a data warehouse</h4>
+    <p>Data is stored as <strong>tables</strong> with a defined schema. Rows and columns; SQL is the interface. Partitioning (e.g. by <code>sale_date</code>) and clustering (e.g. by <code>region_id</code>, <code>product_id</code>) are metadata the engine uses for pruning and sorting.</p>
+    <div class="example-box">
+        <p><strong>Representation:</strong> One table <code>gold.daily_sales_by_product_region</code>. Same three rows; schema enforced at write.</p>
+        <table>
+            <tr><th>sale_date</th><th>product_id</th><th>product_name</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>P1</td><td>Widget Pro</td><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>2025-01-08</td><td>P2</td><td>Basic Cable</td><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>P3</td><td>Power Pack</td><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Access: <code>SELECT * FROM gold.daily_sales_by_product_region WHERE sale_date = '2025-01-08'</code>. Data lives in the warehouse’s managed storage; no visible file paths.</p>
+    </div>
+
+    <h4>2. In a data lake</h4>
+    <p>Data is stored as <strong>files</strong> in object storage. The same logical data can appear in different formats and paths at each layer. No single “table” unless a catalog or engine exposes one.</p>
+    <div class="example-box">
+        <p><strong>Representation:</strong> Files under paths; format and layout differ by layer.</p>
+        <ul style="margin:8px 0;">
+            <li><strong>Landing (raw):</strong> <code>landing/sales/sales_20250108.csv</code> — same data as rows in CSV (one row per transaction before aggregation). Example snippet:</li>
+        </ul>
+        <pre style="margin:8px 0;padding:10px;background:#f5f5f5;border-radius:4px;font-size:0.85em;">sale_id,product_id,region_id,amount,sale_date
+101,P1,North,29.99,2025-01-08
+102,P2,South,14.50,2025-01-08
+103,P1,North,29.99,2025-01-08
+104,P3,West,49.00,2025-01-08</pre>
+        <ul style="margin:8px 0;">
+            <li><strong>Bronze:</strong> <code>bronze/sales_raw/ingestion_date=2025-01-08/</code> — Parquet files, same rows plus <code>_ingested_at</code>, <code>_source_file</code>.</li>
+            <li><strong>Gold:</strong> <code>gold/daily_sales_by_product_region/sale_date=2025-01-08/</code> — Parquet with one partition; file contains the three aggregated rows (sale_date, product_id, product_name, region_id, revenue, order_count).</li>
+        </ul>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Access: read the path with Spark, Athena, or Pandas; e.g. <code>pd.read_parquet("gold/daily_sales_by_product_region/", filters=[("sale_date","==","2025-01-08")])</code>. The “table” is a convention (path + format + optional catalog).</p>
+    </div>
+
+    <h4>3. In a data mart</h4>
+    <p>Data is a <strong>subset</strong> of Gold (or Silver): same or fewer columns, possibly filtered rows, in a dedicated schema or database for one team. Representation is still rows and columns (like the warehouse), but scoped to the mart.</p>
+    <div class="example-box">
+        <p><strong>Representation:</strong> Mart table <code>mart_regional_sales.daily_sales_by_region</code> — same three rows, possibly same columns, or a view that drops <code>product_id</code> and aggregates to region-only for a simpler report.</p>
+        <table>
+            <tr><th>sale_date</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>2025-01-08</td><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Here the mart view aggregates to <strong>region only</strong> (one row per date + region) so the regional team sees totals per region. Same underlying Gold data; different grain in the mart.</p>
+    </div>
+
+    <h4>4. In a cube (semantic layer)</h4>
+    <p>Data is represented as <strong>dimensions</strong> and <strong>measures</strong>. The same Gold rows feed the cube; the cube stores pre-aggregated results or definitions so queries return quickly. Users see pivot-style results, not raw rows.</p>
+    <div class="example-box">
+        <p><strong>Representation:</strong> Dimensions: <strong>Date</strong> (sale_date), <strong>Product</strong> (product_id, product_name, category), <strong>Region</strong> (region_id). Measures: <strong>Revenue</strong> = SUM(revenue), <strong>Order count</strong> = SUM(order_count).</p>
+        <p>Example “query” result (Revenue by Region for 2025-01-08) — what a dashboard gets from the cube:</p>
+        <table>
+            <tr><th>Region</th><th>Revenue</th><th>Order count</th></tr>
+            <tr><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">The cube might store this aggregate or compute it on demand from Gold. Difference from warehouse: access is through the cube’s semantic layer (e.g. “Revenue by Region”), not direct SQL on the fact table.</p>
+    </div>
+
+    <h4>5. In a lakehouse</h4>
+    <p>Data is stored as <strong>tables</strong> (like the warehouse) but the physical storage is <strong>object storage</strong> with a table format (Delta, Iceberg). Same logical rows and columns; you query with SQL. The difference is where files live and that the table has ACID and time travel.</p>
+    <div class="example-box">
+        <p><strong>Representation:</strong> Table <code>gold.daily_sales_by_product_region</code> — same three rows and schema as the warehouse example. Physically: files under e.g. <code>s3://bucket/gold/daily_sales_by_product_region/sale_date=2025-01-08/</code> in Delta format (Parquet + transaction log).</p>
+        <table>
+            <tr><th>sale_date</th><th>product_id</th><th>product_name</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>P1</td><td>Widget Pro</td><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>2025-01-08</td><td>P2</td><td>Basic Cable</td><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>P3</td><td>Power Pack</td><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Access: <code>SELECT * FROM gold.daily_sales_by_product_region WHERE sale_date = '2025-01-08'</code> — same SQL as warehouse. The engine reads Delta files from the path; catalog points to the table location.</p>
+    </div>
+
+    <div class="plain-terms"><strong>Summary:</strong> Same dummy data (three Gold rows for 2025-01-08). <strong>Warehouse</strong> = table, SQL. <strong>Lake</strong> = files (CSV/Parquet) in paths by layer. <strong>Mart</strong> = subset table/view (e.g. region-only grain). <strong>Cube</strong> = dimensions + measures, pivot-style results. <strong>Lakehouse</strong> = table over object storage (Delta/Iceberg), same SQL as warehouse.</div>
 
     <h3>Data storage methods: formats and when to use them</h3>
     <p>Where and how you store data determines cost, speed, and who can query it. <strong>Components</strong>: (1) storage backend (object store vs. warehouse), (2) file format (Parquet, Delta, CSV, JSON), (3) partition layout (e.g. by date), (4) catalog (for discovery and SQL).</p>

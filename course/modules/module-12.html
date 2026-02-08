@@ -35,6 +35,9 @@
         .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
         .key-takeaways ul { margin: 0; padding-left: 22px; }
         .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
+        .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
     </style>
 </head>
 <body>
@@ -47,6 +50,64 @@
         <strong>Key insight:</strong> Validation + quarantine + one quality check + data dictionary turn a medallion build into a production-ready release. The dictionary is where analysts and engineers agree on meaning and caveats.
     </div>
 
+    <h3>Business context</h3>
+    <p><strong>NorthStar Retail</strong> runs the same sales pipeline as in Module 9: daily sales CSV and product API feed Bronze → Silver → Gold, producing <code>gold.daily_sales_by_product_region</code> for regional dashboards. Before releasing that Gold table to all analysts, the team must (1) <strong>validate</strong> every row (e.g. revenue ≥ 0, product_id in product dimension) and route failures to a <strong>quarantine</strong> table instead of failing the whole run, (2) run at least one <strong>quality check</strong> after each load (e.g. uniqueness on the Gold grain, row count for today), and (3) publish a <strong>data dictionary</strong> so everyone knows the Gold table’s columns, grain, and caveats. The goal is a single, trusted “curated” dataset that finance and regional managers can use without guessing what’s in or out.</p>
+
+    <h3>Pipeline architecture (from raw to curated)</h3>
+    <p>The flow below shows how raw data moves through validation, quarantine, medallion layers, and quality checks to become the curated Gold table.</p>
+    <div class="diagram-box">
+        <div class="diagram-title">Architecture: Landing → Bronze → Staging → Validation → Silver / Quarantine → Gold → Quality → Curated</div>
+        <svg viewBox="0 0 920 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+            <defs>
+                <marker id="arr12" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker>
+            </defs>
+            <rect x="10" y="10" width="70" height="36" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="45" y="28" text-anchor="middle" font-size="9">CSV</text><text x="45" y="40" text-anchor="middle" font-size="8" fill="#666">Sales</text>
+            <rect x="90" y="10" width="70" height="36" rx="4" fill="#e8f4f8" stroke="#667eea"/><text x="125" y="28" text-anchor="middle" font-size="9">API</text><text x="125" y="40" text-anchor="middle" font-size="8" fill="#666">Products</text>
+            <line x1="80" y1="28" x2="88" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+            <rect x="168" y="10" width="72" height="36" rx="4" fill="#e0e8f0" stroke="#667eea"/><text x="204" y="28" text-anchor="middle" font-size="9">Landing</text>
+            <line x1="160" y1="28" x2="166" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+            <rect x="248" y="10" width="68" height="36" rx="4" fill="#cd7f32" stroke="#8B4513"/><text x="282" y="28" text-anchor="middle" font-size="9" fill="white">Bronze</text>
+            <line x1="240" y1="28" x2="246" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+            <rect x="324" y="10" width="72" height="36" rx="4" fill="#b8d4e8" stroke="#667eea"/><text x="360" y="28" text-anchor="middle" font-size="9">Staging</text>
+            <line x1="316" y1="28" x2="322" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+            <rect x="404" y="4" width="80" height="48" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="444" y="22" text-anchor="middle" font-size="9">Validation</text><text x="444" y="34" text-anchor="middle" font-size="8">pass/fail</text>
+            <line x1="396" y1="28" x2="402" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+            <rect x="492" y="4" width="64" height="36" rx="4" fill="#C0C0C0" stroke="#808080"/><text x="524" y="25" text-anchor="middle" font-size="9" fill="#333">Silver</text>
+            <rect x="492" y="48" width="64" height="36" rx="4" fill="#f8d7da" stroke="#dc3545"/><text x="524" y="68" text-anchor="middle" font-size="8" fill="#721c24">Quarantine</text>
+            <line x1="444" y1="28" x2="452" y2="20" stroke="#667eea" marker-end="url(#arr12)"/>
+            <line x1="444" y1="52" x2="452" y2="60" stroke="#dc3545" marker-end="url(#arr12)"/>
+            <rect x="564" y="10" width="64" height="36" rx="4" fill="#FFD700" stroke="#B8860B"/><text x="596" y="30" text-anchor="middle" font-size="9" fill="#333">Gold</text>
+            <line x1="556" y1="28" x2="562" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+            <rect x="636" y="10" width="76" height="36" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="674" y="28" text-anchor="middle" font-size="9">Quality</text><text x="674" y="40" text-anchor="middle" font-size="8" fill="#666">checks</text>
+            <line x1="628" y1="28" x2="634" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+            <rect x="720" y="10" width="80" height="36" rx="4" fill="#d4edda" stroke="#28a745"/><text x="760" y="28" text-anchor="middle" font-size="9">Curated</text><text x="760" y="40" text-anchor="middle" font-size="8" fill="#666">+ Dictionary</text>
+            <line x1="712" y1="28" x2="718" y2="28" stroke="#667eea" marker-end="url(#arr12)"/>
+        </svg>
+    </div>
+    <p>Landing and Bronze hold raw data; <strong>Staging</strong> is the intermediate table that validation reads. <strong>Validation</strong> splits rows: pass → <strong>Silver</strong>, fail → <strong>Quarantine</strong> (with <code>fail_reason</code>). Silver feeds <strong>Gold</strong>; after Gold is built, <strong>Quality checks</strong> run. The published <strong>Curated</strong> Gold table plus its <strong>data dictionary</strong> are what analysts consume.</p>
+
+    <h3>Architect-level design: all pipeline stages</h3>
+    <p>An architect documents each stage required to implement “from raw to curated” so the team can build, test, and operate the pipeline. The table below calls out every stage in execution order, with purpose, inputs/outputs, and key design choices.</p>
+    <div class="step-box">
+        <table>
+            <thead>
+                <tr><th>Stage</th><th>Purpose</th><th>Inputs</th><th>Outputs</th><th>Key design choices</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>1. Source ingest</strong></td><td>Pull data from systems of record into the pipeline boundary.</td><td>Sales CSV (file share/cloud), Product API (HTTP).</td><td>Files or API responses written to Landing.</td><td>Schedule (e.g. daily 05:00); idempotency (overwrite or append by date); auth and retries.</td></tr>
+                <tr><td><strong>2. Landing</strong></td><td>Store raw payloads unchanged for replay and audit.</td><td>Ingested files/API responses.</td><td><code>landing/sales/*.csv</code>, <code>landing/api_products/*.json</code>.</td><td>Retention (e.g. 90 days); no schema enforcement.</td></tr>
+                <tr><td><strong>3. Bronze load</strong></td><td>Copy raw data into queryable storage with minimal transformation; add lineage metadata.</td><td>Landing paths.</td><td><code>bronze.sales_raw</code>, <code>bronze.products_raw</code> (with <code>_ingested_at</code>, <code>_source_file</code>).</td><td>Append by run; one table per source; partition by date if needed.</td></tr>
+                <tr><td><strong>4. Staging</strong></td><td>Prepare a single, typed dataset for validation (no business rules yet).</td><td>Bronze tables (sales, products).</td><td><code>staging.sales_staging</code> (e.g. parsed, typed, optionally joined to product for lookup).</td><td>Full refresh or incremental from Bronze; staging is pipeline-internal only.</td></tr>
+                <tr><td><strong>5. Validation &amp; routing</strong></td><td>Apply business rules; split rows into pass (Silver) and fail (Quarantine).</td><td><code>staging.sales_staging</code>; reference: <code>silver.products_clean</code> (or dim).</td><td>Pass → <code>silver.sales_clean</code>; fail → <code>quarantine.sales_failed</code> (with <code>fail_reason</code>, <code>failed_at</code>).</td><td>Rules: e.g. <code>amount &gt;= 0</code>, <code>product_id</code> in dimension, <code>sale_id</code> not null. Hard fail = row to quarantine; alert when quarantine has new rows.</td></tr>
+                <tr><td><strong>6. Silver (clean &amp; integrate)</strong></td><td>Deduplicate, clean, and join into one integrated layer per entity.</td><td><code>silver.sales_clean</code> (from validation), <code>bronze.products_raw</code> or <code>silver.products_clean</code>.</td><td><code>silver.sales_enriched</code> (one row per sale line, with product_name, category).</td><td>Dedup by <code>sale_id</code>; join to product; grain: one row per order line. Merge or full refresh; watermark: <code>_ingested_at</code>.</td></tr>
+                <tr><td><strong>7. Gold (aggregate)</strong></td><td>Build business-level metrics for reporting.</td><td><code>silver.sales_enriched</code>.</td><td><code>gold.daily_sales_by_product_region</code> (sale_date, product_id, product_name, region_id, revenue, order_count).</td><td>Grain: one row per (sale_date, product_id, region_id). Incremental by <code>sale_date</code> or full refresh; watermark: <code>sale_date</code>.</td></tr>
+                <tr><td><strong>8. Quality checks</strong></td><td>Assert expectations after Gold load; fail run or alert on violation.</td><td><code>gold.daily_sales_by_product_region</code>.</td><td>Check results (pass/fail); optional metrics (row count, null counts).</td><td>Uniqueness on (sale_date, product_id, region_id) → 0 duplicate rows; freshness: <code>MAX(sale_date)</code> = expected; row count for today &gt; 0. Wire into DAG: block release or alert.</td></tr>
+                <tr><td><strong>9. Curated release &amp; dictionary</strong></td><td>Publish Gold as the certified dataset; document meaning and caveats.</td><td>Gold table (after quality passes); data dictionary (column definitions, grain, caveats).</td><td>Curated table (same or view on Gold); one-page data dictionary (columns, types, grain, exclusions, SLA).</td><td>Access control; dictionary versioned with pipeline; SLA (e.g. “Gold ready by 08:00 daily”).</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>This design is the single reference for what runs in what order, what each stage consumes and produces, and what decisions (e.g. incremental keys, retention, alerting) the implementation must respect. Orchestration (e.g. Airflow DAG or pipeline scheduler) should execute stages 1–8 in order and trigger alerts when validation or quality checks fail.</p>
+
     <h3>Scenario</h3>
     <p>Starting from your Bronze/Silver/Gold build: introduce validation (e.g. “revenue ≥ 0”, “product_id in dimension”); send failures to a quarantine table and alert. Add at least one automated quality check (row count or uniqueness) and wire it into a run. Write a short data dictionary for the Gold table (column names, definitions, caveats). Optionally describe or implement one scheduled/orchestrated run.</p>
     <h3>Deliverables</h3>
@@ -57,6 +118,48 @@
             <li>One-page data dictionary for the Gold table.</li>
             <li>(Optional) DAG or schedule description.</li>
         </ul>
+    </div>
+
+    <h3>Example data through the pipeline</h3>
+    <p>Using the NorthStar Retail context, the following tables show real shapes of data at each step.</p>
+    <h4>Staging input (before validation)</h4>
+    <p>Rows read from Bronze (or a staging view) that will be validated before Silver. One row has negative revenue; one has an invalid <code>product_id</code>.</p>
+    <div class="example-box">
+        <table>
+            <tr><th>sale_id</th><th>product_id</th><th>region_id</th><th>amount</th><th>sale_date</th></tr>
+            <tr><td>101</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td></tr>
+            <tr><td>102</td><td>P2</td><td>South</td><td>14.50</td><td>2025-01-08</td></tr>
+            <tr><td>103</td><td>P99</td><td>North</td><td>10.00</td><td>2025-01-08</td></tr>
+            <tr><td>104</td><td>P1</td><td>North</td><td>-5.00</td><td>2025-01-08</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Validation rules: <code>amount &gt;= 0</code>, <code>product_id IN (SELECT product_id FROM silver.products_clean)</code>. P99 is not in the product dimension.</p>
+    </div>
+    <h4>After validation: Silver (pass) and Quarantine (fail)</h4>
+    <p><strong>Silver</strong> receives only rows 101 and 102. <strong>Quarantine</strong> receives 103 and 104 with <code>fail_reason</code> and <code>failed_at</code>.</p>
+    <div class="example-box">
+        <p><strong>silver.sales_clean</strong> (pass — 2 rows):</p>
+        <table>
+            <tr><th>sale_id</th><th>product_id</th><th>region_id</th><th>amount</th><th>sale_date</th></tr>
+            <tr><td>101</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td></tr>
+            <tr><td>102</td><td>P2</td><td>South</td><td>14.50</td><td>2025-01-08</td></tr>
+        </table>
+        <p><strong>quarantine.sales_failed</strong> (fail — 2 rows):</p>
+        <table>
+            <tr><th>sale_id</th><th>product_id</th><th>region_id</th><th>amount</th><th>sale_date</th><th>fail_reason</th><th>failed_at</th></tr>
+            <tr><td>103</td><td>P99</td><td>North</td><td>10.00</td><td>2025-01-08</td><td>product_id_invalid</td><td>2025-01-08 07:00:00</td></tr>
+            <tr><td>104</td><td>P1</td><td>North</td><td>-5.00</td><td>2025-01-08</td><td>revenue_negative</td><td>2025-01-08 07:00:00</td></tr>
+        </table>
+    </div>
+    <h4>Gold (curated output) and quality check result</h4>
+    <p>Gold aggregates only the rows that made it into Silver (and then through Silver → Gold logic). Example slice for 2025-01-08:</p>
+    <div class="example-box">
+        <p><strong>gold.daily_sales_by_product_region</strong> (sample):</p>
+        <table>
+            <tr><th>sale_date</th><th>product_id</th><th>product_name</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>P1</td><td>Widget Pro</td><td>North</td><td>29.99</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>P2</td><td>Basic Cable</td><td>South</td><td>14.50</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Rows 103 and 104 are excluded (they never reached Silver). A quality check runs after load: uniqueness on (sale_date, product_id, region_id) returns 0 rows (pass); row count for <code>sale_date = 2025-01-08</code> is 2 (pass if within expected range).</p>
     </div>
 
     <h3>Validation and quarantine (example code)</h3>
@@ -109,8 +212,9 @@ SELECT COUNT(*) FROM gold.daily_sales_by_product_region WHERE sale_date = CURREN
             <tr><td><code>sale_date</code></td><td>Business date of the sale (date partition).</td><td>DATE</td><td>Part of grain. One row per (sale_date, product_id, region_id).</td></tr>
             <tr><td><code>product_id</code></td><td>Surrogate or business key for product; joins to product dimension.</td><td>INT / VARCHAR</td><td>Part of grain. Only products with at least one sale in that day/region.</td></tr>
             <tr><td><code>region_id</code></td><td>Region (e.g. store region or geography); joins to region dimension.</td><td>INT / VARCHAR</td><td>Part of grain.</td></tr>
-            <tr><td><code>quantity_sold</code></td><td>Total units sold that day for this product in this region.</td><td>DECIMAL or INT</td><td>Sum of line-level quantity. Excludes quarantined rows.</td></tr>
-            <tr><td><code>revenue</code></td><td>Total revenue (e.g. quantity × unit price) for that day/product/region.</td><td>DECIMAL(18,2)</td><td>Same exclusions as quantity. Currency and rounding documented elsewhere.</td></tr>
+            <tr><td><code>product_name</code></td><td>Product display name from product dimension (denormalized for reporting).</td><td>VARCHAR</td><td>From Silver product join. Excludes quarantined rows.</td></tr>
+            <tr><td><code>revenue</code></td><td>Total revenue (e.g. sum of amount) for that day/product/region.</td><td>DECIMAL(18,2)</td><td>Excludes quarantined rows. Currency documented elsewhere.</td></tr>
+            <tr><td><code>order_count</code></td><td>Count of distinct sales (order lines) for that day/product/region.</td><td>INT</td><td>Same exclusions as revenue.</td></tr>
         </tbody>
     </table>
     <p><strong>Grain:</strong> One row per (sale_date, product_id, region_id). <strong>Caveats:</strong> Built incrementally by sale_date; rows that failed validation (e.g. negative revenue) are in quarantine and not included; backfills may change historical dates.</p>

@@ -91,6 +91,28 @@
     <p><strong>APIs:</strong> REST APIs are common for SaaS data (e.g. Stripe, Salesforce). You must handle authentication (API keys, OAuth), pagination (cursor or offset), and rate limits. Data is usually JSON; you may need to flatten or normalize nested structures when landing.</p>
     <p><strong>Events:</strong> Message queues (e.g. Kafka, RabbitMQ) or event streams deliver records in real time. Ingestion here means consuming from a topic or queue and writing to a landing store (e.g. object storage or a table). Ordering, exactly-once semantics, and backpressure are important.</p>
 
+    <h3>Connecting to enterprise SaaS platforms</h3>
+    <p>Many organizations ingest from enterprise SaaS and ERP systems such as <strong>SAP</strong>, <strong>Microsoft Dynamics</strong>, and <strong>ServiceNow</strong>. These are pull-based: your pipeline connects (often on a schedule), authenticates, and reads data via APIs or file exports into the landing zone. The table below summarizes typical patterns; exact endpoints and auth depend on the product and deployment (cloud vs. on-prem).</p>
+    <table>
+        <thead>
+            <tr><th>Platform</th><th>Typical use</th><th>How you connect</th><th>What to land</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>SAP</strong> (S/4HANA, ECC, BW)</td><td>ERP: orders, finance, materials, master data</td><td>OData services (REST), RFC/BAPI (via connector), or scheduled file exports (e.g. CSV/XML from BW). Auth: OAuth 2.0, basic, or SAP logon tickets.</td><td>Raw JSON (OData) or files per entity (e.g. orders, customers) with run_id or extract date in path.</td></tr>
+            <tr><td><strong>Microsoft Dynamics 365</strong> (Finance, Sales, CE)</td><td>CRM, finance, supply chain</td><td>Dynamics 365 Web API (OData v4) or Dataverse connector. Auth: OAuth 2.0 (Azure AD). Pagination via <code>@odata.nextLink</code>; rate limits apply.</td><td>JSON per entity (e.g. accounts, contacts, transactions); land full response or normalized records with run_id.</td></tr>
+            <tr><td><strong>ServiceNow</strong></td><td>ITSM: incidents, changes, assets, CMDB</td><td>REST Table API (e.g. <code>/api/now/table/incident</code>). Auth: OAuth 2.0 or basic. Pagination (offset/limit or cursor); consider export sets or scheduled jobs for large pulls.</td><td>JSON per table; land with run_id. Optional: use ServiceNow’s bulk export (file) and land the file.</td></tr>
+        </tbody>
+    </table>
+    <p><strong>Common ingestion considerations:</strong> (1) <strong>Auth</strong>—store credentials (client id/secret, tokens) securely (e.g. secrets manager) and refresh tokens when needed. (2) <strong>Pagination</strong>—loop until all pages are fetched; respect <code>nextLink</code> or offset limits. (3) <strong>Rate limits</strong>—throttle requests or use bulk/export APIs where available. (4) <strong>Incremental vs. full</strong>—use <code>modified_on</code> or equivalent filters when the API supports it to avoid re-reading unchanged data. (5) <strong>Schema</strong>—SaaS vendors add or change fields; land raw so downstream can adapt.</p>
+    <div class="example-box">
+        <h4>Example: SAP, Dynamics, ServiceNow in practice</h4>
+        <ul>
+            <li><strong>SAP:</strong> Call an OData service (e.g. <code>/sap/opu/odata/sap/API_SALES_ORDER_SRV/SalesOrder</code>) with OAuth; page through results; write each page or full result set to <code>landing/sap/orders_{run_id}.json</code>. Alternatively, use a pre-built connector (e.g. in ADF, Informatica) that wraps RFC or OData and lands to a table or blob.</li>
+            <li><strong>Dynamics 365:</strong> Use the Web API base URL (e.g. <code>https://org.crm.dynamics.com/api/data/v9.2/accounts</code>); add <code>Authorization: Bearer &lt;token&gt;</code>; follow <code>@odata.nextLink</code> for pagination; land JSON to <code>landing/dynamics/accounts_{run_id}.json</code> or per-page files.</li>
+            <li><strong>ServiceNow:</strong> GET <code>https://instance.service-now.com/api/now/table/incident?sysparm_limit=1000&amp;sysparm_offset=0</code> with auth; increment offset (or use <code>sysparm_display_value=all</code> and paging); land response to <code>landing/servicenow/incident_{run_id}.json</code>. For very large tables, use export sets or scheduled data export to a file and land the file.</li>
+        </ul>
+    </div>
+
     <h3>Push vs. pull</h3>
     <p><strong>Pull:</strong> Your pipeline initiates the read—e.g. runs a query against a database, calls an API, or lists and reads files from a bucket. You control when and how often ingestion runs. Most batch pipelines are pull-based.</p>
     <p><strong>Push:</strong> The source sends data to you—e.g. webhooks POST to your endpoint, or a CDC connector pushes changes. You must provide a reliable endpoint and handle duplicates and ordering if the source retries.</p>
@@ -140,7 +162,8 @@ write_parquet(df, out_path)
     <h3>Practical use cases</h3>
     <div class="example-box">
         <ul>
-            <li><strong>Ingesting SaaS API data:</strong> e.g. Stripe (payments), Salesforce (CRM). Use REST client with auth and pagination; land full response or normalized records; run on a schedule (e.g. daily) or incremental (e.g. by updated_at).</li>
+            <li><strong>Enterprise SaaS (SAP, Dynamics, ServiceNow):</strong> Pull orders, accounts, or incidents via OData/REST; use OAuth or API auth; paginate and land JSON (or files) with run_id. Run daily or hourly; use <code>modified_on</code> filters for incremental where supported.</li>
+            <li><strong>Other SaaS API data:</strong> e.g. Stripe (payments), Salesforce (CRM). Use REST client with auth and pagination; land full response or normalized records; run on a schedule or incremental (e.g. by updated_at).</li>
             <li><strong>Loading files from SFTP or cloud storage:</strong> List files (e.g. by prefix or date), read each file, write to landing (e.g. same format in a bucket or table). Handle naming conventions and missing files.</li>
             <li><strong>Consuming CDC from a transactional DB:</strong> Use a CDC tool or connector to stream insert/update/delete events; land to a table or object store for downstream processing.</li>
         </ul>
@@ -152,6 +175,7 @@ write_parquet(df, out_path)
             <li>Ingestion reads from sources (DBs, files, APIs, events) and writes raw data to a landing zone.</li>
             <li>Pull = you initiate the read; push = the source sends data. Batch and streaming are both valid.</li>
             <li>Landing "as-is" enables replay, audit, and reprocessing without re-hitting the source.</li>
+            <li>Enterprise SaaS (SAP, Dynamics, ServiceNow): connect via OData/REST; use OAuth or API auth; paginate and land JSON or files with run_id; prefer incremental by <code>modified_on</code> when the API allows.</li>
             <li>Design for volume and rate limits: partition, throttle, and choose batch vs. stream accordingly.</li>
             <li>Use run IDs or overwrite policies so multiple runs behave predictably (idempotency).</li>
         </ul>
@@ -159,10 +183,12 @@ write_parquet(df, out_path)
 
     <h3>Real-World Applications</h3>
     <ul>
-        <li><strong>SaaS sync:</strong> Daily pull from Stripe, Salesforce, or HubSpot via REST APIs into a landing table or bucket.</li>
+        <li><strong>SAP:</strong> Ingest sales orders, GL postings, or master data via OData or file export from S/4HANA/BW into landing; run nightly or on schedule; downstream build Silver/Gold for finance or ops reporting.</li>
+        <li><strong>Microsoft Dynamics 365:</strong> Pull accounts, contacts, opportunities, or transactions via Web API (OData) into landing; incremental by <code>modifiedon</code> when possible; feed CRM or finance dashboards.</li>
+        <li><strong>ServiceNow:</strong> Ingest incidents, changes, or CMDB via Table API or bulk export; land JSON or CSV with run_id; power ITSM and asset reporting.</li>
+        <li><strong>Other SaaS sync:</strong> Daily pull from Stripe, Salesforce, or HubSpot via REST APIs into a landing table or bucket.</li>
         <li><strong>File drops:</strong> SFTP or S3 folders with CSV/Parquet; list by date/prefix, read, and land with a run ID.</li>
-        <li><strong>CDC:</strong> Stream database changes (insert/update/delete) into a landing store for near real-time pipelines.</li>
-        <li><strong>Events:</strong> Consume from Kafka or Kinesis and land to object storage or a table for batch or micro-batch transform.</li>
+        <li><strong>CDC and events:</strong> Stream database changes or Kafka/Kinesis events into a landing store for near real-time or micro-batch pipelines.</li>
     </ul>
 
     <div class="info-box">

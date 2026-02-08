@@ -14,7 +14,9 @@ A progressive, practice-oriented curriculum from fundamentals to capstone—with
 | 4 | Data Management | Intermediate → Advanced |
 | 5 | Storage | Intermediate |
 | 6 | Analytics (Power BI, Tableau) | Intermediate → Advanced |
-| 7 | Capstone & Simulation | Advanced / Holistic |
+| 7 | Capstone, Simulation, Layered View & Roadmap | Advanced / Holistic |
+
+The course is delivered as **23 modules** across these 7 sections.
 
 ## Role-based pathways
 
@@ -368,12 +370,15 @@ See the **Appendix: Role-specific elements** for a full mapping and suggested ac
 
 ---
 
-# Section 7: Capstone, Simulation, and Holistic View
+# Section 7: Capstone, Simulation, Layered View, and Roadmap
+
+Section 7 comprises **four modules (20–23)**: Capstone (full pipeline), Simulation & Holistic View, **Layered Pipeline View**, and Roadmap & Next Steps.
 
 ## 7.1 Learning Objectives
 - Apply the full pipeline lifecycle in one coherent scenario
 - Make trade-off decisions (batch vs. stream, layers, storage, tooling)
 - Practice troubleshooting and iteration in a safe environment
+- Explore the end-to-end pipeline by role and platform (business user, AWS, Azure)
 - Present and document an end-to-end solution
 
 ## 7.2 Chapter Outline
@@ -414,21 +419,30 @@ See the **Appendix: Role-specific elements** for a full mapping and suggested ac
   - Roundtable: Each participant brings one real business question; group picks two and walks through the “question → pipeline → report” flow on a whiteboard.
   - One-pager: Write a “data request” template (question, needed data, suggested pipeline change, expected output) and use it for one of the roundtable questions.
 
-### Chapter 7.4 — Roadmap and Next Steps
-- **Purpose:** Where to go after the course: advanced topics (streaming, ML pipelines, data mesh) and resources.
+### Chapter 7.4 — Layered Pipeline View
+- **Purpose:** One continuous view of the pipeline from **data source to business consumption**, with all concepts in one place. Each layer can be viewed as a **Business user**, **Data Architect (AWS)**, or **Data Architect (Azure)** so participants see the same pipeline through different lenses.
+- **Layers covered:** Data sources → Ingestion & Landing → Bronze → Staging → Validation & Quarantine → Silver → Gold → Quality checks → Storage (warehouse / lake / mart / cube / lakehouse) → Curated dataset & Dictionary → Analytics & Report → Business consumption.
+- **Interactive elements:** 
+  - Per-layer dropdown: switch between “Business user” (outcomes, trust, what I see/use), “Data Architect (AWS)” (e.g. S3, Glue, Redshift, Athena, QuickSight, Kinesis, DMS), and “Data Architect (Azure)” (e.g. ADLS, Data Factory, Synapse, Power BI, Purview, Event Hubs). The illustration or content for that layer updates to match.
+  - Use with capstone (Module 20) and simulation (Module 21) to reinforce where each concept sits in the stack and how it appears to different roles and platforms.
+
+### Chapter 7.5 — Roadmap and Next Steps
+- **Purpose:** Where to go after the course: advanced topics (streaming, ML pipelines, data mesh) and resources. This is the final module (Module 23).
 - **Interactive elements:** 
   - Self-assessment: “Rate your confidence (1–5) on ingestion, ETL, storage, analytics”; identify one area to deepen.
   - Resource share: Each person posts one resource (course, book, tool doc) for the group.
+  - Completion: Use the role-specific appendix for ongoing reference and to run sessions with your team.
 
 ### By role: Technical architect | Data engineer | Analyst
 - **Architect:** Lead or review the pipeline design doc; present trade-offs (batch vs. stream, layers, storage, tooling) and the "failure/recovery" strategy; facilitate the "business question → pipeline → report" roundtable.
 - **Engineer:** Own implementation (ingestion, medallion, quality, optional orchestration); run the failure simulation (diagnose and fix); document runbook items (e.g., "if source fails, do X").
 - **Analyst:** Own the report/dashboard and the "data request" one-pager; in the showcase, present from a stakeholder perspective (what question it answers, how often it's updated, one caveat); participate in roundtable with a real business question.
 
-## 7.3 Capstone Use Case (Summary)
+## 7.6 Capstone Use Case (Summary)
 - **End-to-end scenario:** One of the capstone options above (retail, SaaS, or internal ops), executed over 2–4 weeks (or compressed in a bootcamp).
 - **Holistic deliverables:** Design doc, pipeline code, quality checks, one mart (or cube) decision, one report/dashboard, and a short “lessons learned” doc.
 - **Interactive wrap-up:** Presentation to “stakeholders” (instructor or peers role-playing); Q&A on design choices and trade-offs.
+- **Section 7 modules (20–23):** Module 20 Capstone; Module 21 Simulation & Holistic View; Module 22 Layered Pipeline View; Module 23 Roadmap & Next Steps.
 
 ---
 
@@ -443,7 +457,7 @@ See the **Appendix: Role-specific elements** for a full mapping and suggested ac
 | 4 | From Raw to Curated (validation, quality, dictionary) |
 | 5 | Storage Strategy for One Domain (storage map) |
 | 6 | End-to-End Report (Power BI + Tableau from Gold) |
-| 7 | Capstone (full pipeline + report) + Simulation (failure/recovery) |
+| 7 | Capstone (full pipeline + report); Simulation (failure/recovery); Layered Pipeline View (source→consumption by role/AWS/Azure); Roadmap & Next Steps |
 
 ## Interactive Element Types Used
 - **Polls / votes:** Quick opinion or prior experience

@@ -57,6 +57,49 @@
     <p><strong>REST APIs:</strong> Use HTTPS and standard methods (GET for read). Authentication is often via API key (header or query) or OAuth 2.0. Many APIs paginate: they return a limited number of records per request and provide a "next" cursor or page number. You must loop until all pages are fetched. Rate limits (e.g. 100 requests per minute) require throttling or backoff; otherwise your job may be blocked or banned. Store the raw response or a normalized form in the landing zone; include a run id or timestamp so reruns don't create duplicates if you design for idempotency.</p>
     <p><strong>File-based:</strong> CSV, JSON, Parquet are common. Cloud storage (S3, ADLS, GCS) is typical for landing: you list objects by prefix or date, read each file, and optionally write to another location or table. Incremental loads use a watermark: e.g. only read files modified after the last run, or only rows where <code>last_updated</code> is greater than the last run. This avoids re-reading and re-processing the same data.</p>
 
+    <h3>Synchronous vs. asynchronous ingestion</h3>
+    <p>Ingestion can be <strong>synchronous</strong> or <strong>asynchronous</strong>. The choice affects latency, coupling to the source, and how you handle spikes and failures.</p>
+    <table>
+        <thead>
+            <tr><th>Mode</th><th>How it works</th><th>Typical use</th><th>Trade-offs</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Synchronous</strong></td><td>The pipeline <em>calls</em> the source (API, DB query, file list) and <em>waits</em> for the full response. Only after the response is received does it write to the landing zone. Request–response in one flow.</td><td>Batch jobs (daily/hourly pull from API or DB), file drops, scheduled exports. When the source is under your control or supports "pull" and you can afford to wait.</td><td>Simple to reason about; caller blocks until done. Source must be available and responsive; spikes can overload the source or time out.</td></tr>
+            <tr><td><strong>Asynchronous</strong></td><td>The source (or an adapter) <em>publishes</em> events or messages to a <strong>message queue</strong> or stream. The ingestion job <em>consumes</em> from the queue and writes to the landing zone. Producer and consumer are decoupled; no direct request–response.</td><td>Event-driven pipelines, high-volume or real-time feeds (clicks, logs, CDC), when the source cannot wait for your pull or when you want buffering and replay.</td><td>Decouples producer and consumer; queue absorbs spikes and allows replay. More moving parts (queue, consumer lag monitoring); need to handle ordering and exactly-once if required.</td></tr>
+        </tbody>
+    </table>
+    <p>Use <strong>synchronous</strong> when you run on a schedule (e.g. nightly API pull) and the source can handle your request in one go. Use <strong>asynchronous</strong> when events are continuous, when the source pushes data (e.g. webhooks, CDC), or when you need to buffer and process at your own pace without blocking the source.</p>
+
+    <h3>Using message queues for async ingestion</h3>
+    <p>Message queues (and log-based streams) sit between producers (sources or adapters) and your ingestion process. The producer publishes messages; your ingestion job <strong>consumes</strong> from the queue and then <strong>saves</strong> the data to the landing zone. This gives you buffering, backpressure, and often replay.</p>
+    <div class="plain-terms">
+        <strong>Common options:</strong> <strong>Kafka</strong> (log-based, high throughput, replay by offset; good for events and CDC). <strong>RabbitMQ</strong> (traditional message queue; queues and exchanges; at-least-once delivery). <strong>Amazon SQS</strong>, <strong>Azure Service Bus</strong>, <strong>Google Pub/Sub</strong> (managed queues; simple consume and delete or redrive to DLQ). <strong>Kinesis</strong> (stream, ordered shards; similar to Kafka for AWS).
+    </div>
+    <p><strong>Flow:</strong> (1) Source or adapter publishes events/messages to a topic or queue (e.g. <code>orders-events</code>). (2) Ingestion consumer subscribes and reads in batches. (3) For each batch, validate (optional), then <strong>write to the landing zone</strong> (e.g. append to a file in object storage or insert into a table). (4) Commit offset or acknowledge messages so they are not redelivered. (5) Optionally, failed messages go to a DLQ for retry or inspection.</p>
+    <p><strong>Why use a queue:</strong> The source does not need to know about your landing zone or wait for your write. If your ingestion or landing zone is slow or down, the queue buffers messages. You can scale consumers to process faster, and with Kafka/Kinesis you can replay from an offset to reprocess after a bug fix.</p>
+    <div class="step-box">
+        <p><strong>Example (conceptual):</strong> Application emits order events to a Kafka topic. Ingestion job (e.g. Spark Streaming, Kafka Connect, or a small consumer) reads from the topic in micro-batches, writes each batch to <code>landing/orders/dt=2025-02-08/part-00001.json</code> (or appends to a table with <code>ingested_at</code>), then commits the offset. Saving is covered in the next section.</p>
+    </div>
+
+    <h3>Saving the ingested data</h3>
+    <p>Whether ingestion is synchronous or asynchronous, the final step is to <strong>persist</strong> the data in the <strong>landing zone</strong> so downstream transforms can read it and you have an audit trail. How you save affects idempotency, replay, and cost.</p>
+    <ul>
+        <li><strong>Where to save:</strong> Typically <strong>object storage</strong> (S3, ADLS, GCS) as files, or a <strong>database table</strong> (e.g. a "raw" or "bronze" table). Object storage is common for event-style and file-style ingestion because it is cheap and supports partitioning by date or run.</li>
+        <li><strong>Formats:</strong> <strong>JSON</strong> for API/event payloads (as-is, one file per batch or per run). <strong>Parquet</strong> or <strong>CSV</strong> for tabular data—Parquet is smaller and column-friendly for later SQL. Choose based on what the source gives you and what downstream expects.</li>
+        <li><strong>Naming and partitioning:</strong> Include a <strong>run_id</strong> or <strong>timestamp</strong> so multiple runs do not overwrite each other (e.g. <code>landing/orders/run_id=20250208_060001/part-0.json</code>). For date-scoped replay, use <strong>partition by date</strong> (e.g. <code>landing/orders/year=2025/month=02/day=08/</code>). Then downstream can read "all data for 2025-02-08" or "latest run" predictably.</li>
+        <li><strong>Append vs. overwrite:</strong> <strong>Append</strong> (new file or new rows each run) is simple and preserves history; use a run_id or batch id so you can reason about what arrived when. <strong>Overwrite</strong> (e.g. replace all files in <code>landing/orders/dt=2025-02-08/</code>) is idempotent for "full snapshot of that day" and avoids duplicate rows when you re-run. For queues, appending with a batch id or partition is typical; for daily API pull, overwrite by partition is common.</li>
+    </ul>
+    <div class="example-box">
+        <h4>Saving patterns (summary)</h4>
+        <table>
+            <tr><th>Scenario</th><th>Where</th><th>Format</th><th>Pattern</th></tr>
+            <tr><td>API pull (sync)</td><td>S3 / ADLS / GCS</td><td>JSON or Parquet</td><td>One file per run: <code>landing/api_orders/run_id=20250208_060001.json</code>; or partition by date and overwrite that partition.</td></tr>
+            <tr><td>Queue consumer (async)</td><td>S3 / ADLS / GCS or table</td><td>JSON (events) or Parquet (batched)</td><td>Append to <code>landing/events/dt=2025-02-08/</code> with batch id in filename; or append rows to bronze table with <code>ingested_at</code>, <code>batch_id</code>.</td></tr>
+            <tr><td>File drop</td><td>Same bucket or another prefix</td><td>As-is (CSV, etc.) or Parquet</td><td>Copy to <code>landing/files/source_name/date=2025-02-08/file.parquet</code>; overwrite by date for idempotency if re-run.</td></tr>
+        </table>
+    </div>
+    <p>After saving, downstream jobs read from the landing zone (by path, partition, or table) and apply transforms. Idempotency (merge by key or overwrite by partition) is applied when writing to Silver/Gold, not necessarily in the raw landing layer—but consistent naming and partitioning make replay and backfill straightforward.</p>
+
     <div class="diagram-box">
         <div class="diagram-title">Retry with exponential backoff (conceptual)</div>
         <svg viewBox="0 0 440 70" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
@@ -106,6 +149,9 @@ if rows:
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
+            <li><strong>Sync vs. async:</strong> Synchronous = call source and wait for response, then save; async = source publishes to a message queue, consumer reads and saves. Use sync for scheduled pull; use async (with queues) for events, push, or when you need buffering and replay.</li>
+            <li><strong>Message queues (Kafka, RabbitMQ, SQS, etc.):</strong> Producer publishes; ingestion consumer reads in batches and writes to the landing zone; commit offset/ack so messages aren't redelivered. Queues decouple source and pipeline and allow replay.</li>
+            <li><strong>Saving ingested data:</strong> Land in object storage (S3, ADLS, GCS) or a table. Use run_id or partition by date; choose JSON (API/events) or Parquet/CSV (tabular). Append for history, overwrite by partition for idempotent full refresh.</li>
             <li>REST APIs: auth, pagination, rate limits; use retry with exponential backoff for transient failures.</li>
             <li>Idempotency: same run twice → same result; use unique keys and upsert/merge or overwrite by partition.</li>
             <li>Incremental: watermark (e.g. max updated_at) so you only fetch new or changed rows.</li>
@@ -116,8 +162,9 @@ if rows:
 
     <h3>Real-World Applications</h3>
     <ul>
-        <li><strong>SaaS sync:</strong> Stripe, Salesforce—paginate, throttle, land with run id; incremental by updated_at.</li>
-        <li><strong>File ingestion:</strong> S3/GCS list by prefix, watermark by file modified time, idempotent overwrite by date.</li>
+        <li><strong>Sync ingestion:</strong> Daily API pull from Stripe, Salesforce—paginate, throttle, save to <code>landing/.../run_id=...json</code> or overwrite partition by date; incremental by updated_at.</li>
+        <li><strong>Async ingestion with a queue:</strong> App or CDC publishes to Kafka/Kinesis; consumer reads in micro-batches and appends to <code>landing/events/dt=.../</code> or bronze table; commit offset; use DLQ for bad messages.</li>
+        <li><strong>File ingestion:</strong> S3/GCS list by prefix, watermark by file modified time; save to landing with date partition; idempotent overwrite by date if re-run.</li>
         <li><strong>API outages:</strong> Retry with backoff; after max retries fail and alert; backfill when source recovers.</li>
     </ul>
 

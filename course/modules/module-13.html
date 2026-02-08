@@ -26,6 +26,7 @@
         .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
         .diagram-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; overflow-x: auto; }
         .diagram-box .diagram-title { font-weight: bold; color: #764ba2; margin-bottom: 12px; }
+        .diagram-box img.storage-diagram { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto; }
         .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
         .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
         .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
@@ -35,6 +36,8 @@
         .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
         .key-takeaways ul { margin: 0; padding-left: 22px; }
         .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin: 16px 0; }
     </style>
 </head>
 <body>
@@ -62,6 +65,12 @@
         </svg>
     </div>
 
+    <div class="diagram-box">
+        <div class="diagram-title">Visual overview: five storage types</div>
+        <p style="margin-bottom:12px;">The image below summarizes where each storage type fits: <strong>Warehouse</strong> (SQL, curated), <strong>Lake</strong> (raw files, ML), <strong>Mart</strong> (team subset), <strong>Cube</strong> (fast BI), and <strong>Lakehouse</strong> (lake + tables + ACID).</p>
+        <img src="storage-types-diagram.png" alt="Diagram: Warehouse, Lake, Mart, Cube, and Lakehouse storage types with short descriptors" class="storage-diagram" width="800" />
+    </div>
+
     <h3>When to use which</h3>
     <div class="step-box">
         <table>
@@ -70,8 +79,62 @@
             <tr><td>Lake</td><td>Raw events, ML features, archival, diverse formats</td></tr>
             <tr><td>Mart</td><td>Subject-area subset (e.g. “Marketing performance”, “Supply chain”)</td></tr>
             <tr><td>Cube</td><td>Executive dashboards, sub-second response, drill-down</td></tr>
+            <tr><td>Lakehouse</td><td>One platform for raw + curated; SQL and ML on same storage; lower cost than warehouse-only</td></tr>
         </table>
     </div>
+
+    <h3>Storage types in detail</h3>
+    <p>Below: what each type does, where it helps, example technologies, a dummy example, and how it fits into pipeline design.</p>
+
+    <h4>1. Data warehouse</h4>
+    <p><strong>What it does:</strong> A warehouse stores structured data with a defined schema (schema-on-write). Data is organized in tables, optimized for analytical queries (columnar storage, indexes), and accessed via SQL. It provides ACID transactions, access control, and tight integration with BI tools.</p>
+    <p><strong>Where it's helpful:</strong> Curated reporting tables (Silver/Gold), ad hoc SQL by analysts, governed dashboards, and any use case where you need consistent metrics, role-based access, and fast aggregations over clean data. It is the default home for "single source of truth" business tables.</p>
+    <p><strong>Example technologies:</strong> Snowflake, Google BigQuery, Amazon Redshift, Azure Synapse Analytics, Databricks SQL (warehouse tier), Oracle Autonomous Data Warehouse, Teradata.</p>
+    <div class="example-box">
+        <h4>Dummy example: NorthStar Retail warehouse</h4>
+        <p>NorthStar loads <code>gold.daily_sales_by_product_region</code> into a Snowflake database. Analysts run <code>SELECT sale_date, region_id, SUM(revenue) FROM gold.daily_sales_by_product_region WHERE sale_date BETWEEN '2025-01-01' AND '2025-01-31' GROUP BY sale_date, region_id</code> in Tableau. Finance has a separate schema with PII masked. The pipeline writes only new partitions (incremental by <code>sale_date</code>) so full-table scans are avoided.</p>
+    </div>
+    <div class="plain-terms"><strong>Pipeline design:</strong> Silver and Gold tables are typically written to the warehouse. Use staging tables (e.g. <code>staging.daily_sales_stg</code>) for each load, then merge or insert into the target table. Partition (or cluster) by date for incremental loads and partition pruning. Run quality checks after load; expose only certified tables to analysts.</div>
+
+    <h4>2. Data lake</h4>
+    <p><strong>What it does:</strong> A lake is object storage (blobs or files) that holds data in file formats such as CSV, JSON, Parquet, or ORC. There is no single schema enforced at write time (schema-on-read). You can store raw landing data, Bronze layers, and large volumes at low cost. Query engines (Spark, Athena, Presto) read files on demand.</p>
+    <p><strong>Where it's helpful:</strong> Landing zones (raw payloads for replay and audit), Bronze and sometimes Silver when you want cheap storage and flexibility. Data science and ML (feature store, training data). Compliance and long-term retention. When you have many sources or formats (logs, events, APIs) that don't all need to be in a warehouse yet.</p>
+    <p><strong>Example technologies:</strong> Amazon S3, Azure Data Lake Storage (ADLS), Google Cloud Storage (GCS), MinIO (self-hosted). Often used with Apache Spark, AWS Athena, Presto/Trino, or Databricks for querying.</p>
+    <div class="example-box">
+        <h4>Dummy example: NorthStar lake layout</h4>
+        <p><code>landing/sales/</code> holds daily CSVs (e.g. <code>sales_2025-01-08.csv</code>). <code>bronze/sales_raw/</code> is Parquet partitioned by <code>ingestion_date</code>. A data scientist reads <code>bronze/sales_raw</code> and <code>silver/products</code> (also Parquet) in a notebook to build a "revenue by product category" feature set for a model. No data is duplicated into the warehouse until Gold is published.</p>
+    </div>
+    <div class="plain-terms"><strong>Pipeline design:</strong> Landing and Bronze live in the lake; use a consistent layout (e.g. <code>bronze/source_name/partition_col=value/</code>). Prefer columnar formats (Parquet) for any layer that will be queried. Partition by date (or ingestion time) for incremental jobs. If Silver or Gold are in the lake, use a table format (Delta, Iceberg) or a separate warehouse for SQL workloads.</div>
+
+    <h4>3. Data mart</h4>
+    <p><strong>What it does:</strong> A mart is a focused subset of data for one team or subject area. It can be a dedicated schema, database, or set of views/tables that contain only the dimensions and facts relevant to that audience (e.g. "Marketing performance", "Supply chain"). It often derives from the central warehouse or Gold layer.</p>
+    <p><strong>Where it's helpful:</strong> Reducing load on the central warehouse; giving a team only the tables and rows they need; enforcing subject-area boundaries and SLAs. Marketing might have a mart with campaigns and conversions; supply chain with inventory and orders. Each mart can have its own refresh schedule and access rules.</p>
+    <p><strong>Example technologies:</strong> Often the same platform as the warehouse (e.g. a Snowflake schema <code>mart_marketing</code>, BigQuery dataset <code>mart_supply_chain</code>). Can also be a separate database (e.g. PostgreSQL) or a virtual mart built from views over the warehouse.</p>
+    <div class="example-box">
+        <h4>Dummy example: Regional sales mart</h4>
+        <p>NorthStar creates a mart <code>mart_regional_sales</code> with one table: <code>daily_sales_by_region</code> (sale_date, region_id, product_name, revenue, order_count), plus a small <code>dim_region</code>. Only the sales and operations teams have access. The mart is refreshed daily from <code>gold.daily_sales_by_product_region</code> right after the Gold job runs. Analysts never query the central Gold table directly for regional reports—they use the mart.</p>
+    </div>
+    <div class="plain-terms"><strong>Pipeline design:</strong> Marts are fed from Gold (or Silver). Add a pipeline stage "Refresh mart" that runs after Gold: either <code>INSERT OVERWRITE</code> or a view. Document which Gold tables feed which mart and the refresh order. Marts can be views (no storage cost, always current) or materialized tables (faster queries, refresh on schedule).</div>
+
+    <h4>4. Cube / semantic layer</h4>
+    <p><strong>What it does:</strong> A cube (or semantic layer) exposes pre-aggregated dimensions and measures to BI tools. Queries hit the cube instead of the raw fact table, so response times are sub-second and metrics (e.g. "Revenue") are defined in one place. Users drill down by dimensions (date, product, region) without writing SQL.</p>
+    <p><strong>Where it's helpful:</strong> Executive dashboards, high concurrency, and consistent definitions across reports. When many users need the same metrics with different filters, the cube avoids heavy queries on the warehouse and ensures one definition of "revenue" or "order count."</p>
+    <p><strong>Example technologies:</strong> Looker (LookML), Cube.dev, Apache Kylin, AtScale, Power BI aggregation tables / semantic models, Druid, or embedded semantic layers in BI tools (Tableau data model, MicroStrategy).</p>
+    <div class="example-box">
+        <h4>Dummy example: NorthStar exec dashboard cube</h4>
+        <p>The cube has dimensions: <strong>Date</strong> (sale_date), <strong>Product</strong> (product_id, product_name, category), <strong>Region</strong> (region_id). Measures: <strong>Revenue</strong> = SUM(revenue), <strong>Order count</strong> = SUM(order_count). The CEO dashboard shows Revenue by Region for the current month; clicking a region drills to Product. All queries hit the cube; the warehouse Gold table is only updated daily, and the cube is refreshed after Gold.</p>
+    </div>
+    <div class="plain-terms"><strong>Pipeline design:</strong> The cube is built from Gold (or a mart). Add a stage "Refresh cube / semantic model" after the Gold load. Pipeline order: Gold → (optional mart) → cube refresh. No raw or Bronze data in the cube—only business-level aggregates and dimensions. Document the cube's source table and refresh SLA (e.g. "Cube reflects data as of 08:00").</div>
+
+    <h4>5. Lakehouse</h4>
+    <p><strong>What it does:</strong> A lakehouse keeps data in object storage (like a lake) but adds a table format (e.g. Delta Lake, Apache Iceberg) that provides ACID transactions, schema enforcement, and time travel. You can run SQL on the same storage where raw and curated data live—no separate warehouse required for querying.</p>
+    <p><strong>Where it's helpful:</strong> When you want one platform for landing, Bronze, Silver, and Gold: cheap storage, SQL, and ML on the same data. Unifying data engineering and data science; reducing copies and latency. Good when you're cloud-native and want to avoid loading everything into a traditional warehouse.</p>
+    <p><strong>Example technologies:</strong> Databricks (Delta Lake), Apache Iceberg (e.g. with Spark, Athena, or Snowflake), Apache Hudi. Delta Lake can sit on S3, ADLS, or GCS; Iceberg and Hudi are open formats that work across engines.</p>
+    <div class="example-box">
+        <h4>Dummy example: NorthStar on a lakehouse</h4>
+        <p>Bronze tables (<code>bronze.sales_raw</code>, <code>bronze.products_raw</code>) are Delta tables on S3. Silver and Gold (<code>silver.sales_enriched</code>, <code>gold.daily_sales_by_product_region</code>) are also Delta on S3. One Databricks or Spark job reads landing files, writes Bronze, then runs SQL to build Silver and Gold. Analysts query <code>gold.daily_sales_by_product_region</code> with SQL; data scientists read the same paths with Spark. No separate copy into a warehouse.</p>
+    </div>
+    <div class="plain-terms"><strong>Pipeline design:</strong> Use one catalog and object store for all layers. Bronze: append-only Delta/Iceberg with <code>_ingested_at</code>; Silver/Gold: merge or overwrite by partition. Enable time travel for debugging. Orchestration (e.g. Airflow, Databricks Workflows) runs the same medallion steps; the only difference from "warehouse" is that tables live on object storage with a table format instead of in a dedicated warehouse engine.</div>
 
     <h3>Reading and writing formats: Python and R</h3>
     <p><strong>Process:</strong> Data lands in a format (CSV, JSON, Parquet); you choose format by use case (landing = CSV/JSON, analytics = Parquet). <strong>Components:</strong> file or table, schema (explicit or inferred), and optional partitioning. <strong>Outcome:</strong> correct types, smaller size (Parquet), and partition pruning when applicable.</p>
@@ -126,10 +189,10 @@ PARTITION BY (sale_date);  -- or PARTITION BY RANGE (sale_date)
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
-            <li>Warehouse: SQL, reporting; Lake: raw, files, ML; Mart: team subset; Cube: pre-aggregated fast BI.</li>
-            <li>Lakehouse = lake storage + table formats + ACID; Bronze in lake, Silver/Gold queried with SQL.</li>
-            <li>Use Python (pandas) or R (readr, arrow) to read CSV/JSON from landing and write Parquet for Silver; Parquet gives smaller size and faster column scans.</li>
-            <li>Partition by date for incremental loads and partition pruning; trade off cost, performance, concurrency.</li>
+            <li>Warehouse: schema-on-write, SQL, curated Silver/Gold; Lake: object storage, schema-on-read, landing/Bronze/ML; Mart: subject-area subset; Cube: pre-aggregated dimensions and measures for fast BI; Lakehouse: lake + table format + ACID.</li>
+            <li>Each type has a place: warehouse for governed reporting; lake for raw retention and ML; mart to isolate team data; cube for dashboards; lakehouse to unify pipeline and queries on one store.</li>
+            <li>Pipeline design differs by type: warehouse = staging then merge, partition by date; lake = consistent paths, Parquet, partition by date; mart = refresh after Gold; cube = refresh after Gold; lakehouse = one catalog, Bronze append, Silver/Gold merge.</li>
+            <li>Use Python (pandas) or R (readr, arrow) to read CSV/JSON from landing and write Parquet for Silver; partition by date for incremental loads and partition pruning.</li>
         </ul>
     </div>
 

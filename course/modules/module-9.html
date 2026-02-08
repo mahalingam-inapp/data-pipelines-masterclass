@@ -71,6 +71,71 @@
     <h3>Scenario in detail</h3>
     <p>You already have data in a landing zone from Module 6: (1) a CSV (e.g. sales) and (2) an API response (e.g. product or region lookup). Use that as the input. <strong>Bronze:</strong> Copy the landed data into Bronze tables (or files) with minimal change—e.g. add ingestion timestamp and source name. One Bronze table or partition per source. <strong>Silver:</strong> Clean the data (types, nulls, standardize names), deduplicate by a business key (e.g. order_id or composite key), and join the two sources if they relate (e.g. sales to product). Output one or more Silver tables with a clear grain (e.g. one row per order line). <strong>Gold:</strong> Aggregate to business metrics—e.g. daily sales by product and region (SUM revenue, COUNT orders). This is the table that a report or dashboard would use. Document the flow: which tables feed which, and what the incremental strategy is for Silver and Gold (e.g. key columns, watermark column).</p>
 
+    <h3>Dummy example: source data, scenario, and contents by layer</h3>
+    <p><strong>Business context:</strong> NorthStar Retail sells products in three regions (North, South, West). Each day, store systems export a <strong>sales CSV</strong> (transaction-level: sale_id, product_id, region_id, amount, date). A separate <strong>product API</strong> provides product master data (product_id, product_name, category). The business wants a single report: <em>daily revenue and order count by product and region</em> so regional managers can compare performance and plan inventory. Below: sample source data, then how that data looks after Bronze, Silver, and Gold.</p>
+
+    <h4>Source data (landing)</h4>
+    <p><strong>Sales CSV</strong> (landed as <code>landing/sales/sales_20250108.csv</code>):</p>
+    <div class="example-box">
+        <table>
+            <tr><th>sale_id</th><th>product_id</th><th>region_id</th><th>amount</th><th>sale_date</th></tr>
+            <tr><td>101</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td></tr>
+            <tr><td>102</td><td>P2</td><td>South</td><td>14.50</td><td>2025-01-08</td></tr>
+            <tr><td>103</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td></tr>
+            <tr><td>104</td><td>P3</td><td>West</td><td>49.00</td><td>2025-01-08</td></tr>
+        </table>
+    </div>
+    <p><strong>Product API response</strong> (landed as <code>landing/api_products/products_20250108.json</code>):</p>
+    <div class="example-box">
+        <table>
+            <tr><th>product_id</th><th>product_name</th><th>category</th></tr>
+            <tr><td>P1</td><td>Widget Pro</td><td>Electronics</td></tr>
+            <tr><td>P2</td><td>Basic Cable</td><td>Accessories</td></tr>
+            <tr><td>P3</td><td>Power Pack</td><td>Electronics</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">(In landing this is typically one JSON file with an array of product objects.)</p>
+    </div>
+
+    <h4>After Bronze</h4>
+    <p>Raw copy from landing with ingestion metadata. One Bronze table per source; new runs append rows.</p>
+    <div class="example-box">
+        <p><strong>bronze.sales_raw</strong> (sample columns):</p>
+        <table>
+            <tr><th>sale_id</th><th>product_id</th><th>region_id</th><th>amount</th><th>sale_date</th><th>_ingested_at</th><th>_source_file</th></tr>
+            <tr><td>101</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td><td>2025-01-08 06:15:00</td><td>sales_20250108.csv</td></tr>
+            <tr><td>102</td><td>P2</td><td>South</td><td>14.50</td><td>2025-01-08</td><td>2025-01-08 06:15:00</td><td>sales_20250108.csv</td></tr>
+            <tr><td>103</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td><td>2025-01-08 06:15:00</td><td>sales_20250108.csv</td></tr>
+            <tr><td>104</td><td>P3</td><td>West</td><td>49.00</td><td>2025-01-08</td><td>2025-01-08 06:15:00</td><td>sales_20250108.csv</td></tr>
+        </table>
+        <p><strong>bronze.products_raw</strong> (sample): same product columns plus <code>_ingested_at</code>, <code>_source_file</code> (e.g. products_20250108.json).</p>
+    </div>
+
+    <h4>After Silver</h4>
+    <p>Cleaned, deduplicated by business key, and joined. Grain: one row per sale line, with product name and category attached.</p>
+    <div class="example-box">
+        <p><strong>silver.sales_enriched</strong>:</p>
+        <table>
+            <tr><th>sale_id</th><th>product_id</th><th>region_id</th><th>amount</th><th>sale_date</th><th>product_name</th><th>category</th></tr>
+            <tr><td>101</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td><td>Widget Pro</td><td>Electronics</td></tr>
+            <tr><td>102</td><td>P2</td><td>South</td><td>14.50</td><td>2025-01-08</td><td>Basic Cable</td><td>Accessories</td></tr>
+            <tr><td>103</td><td>P1</td><td>North</td><td>29.99</td><td>2025-01-08</td><td>Widget Pro</td><td>Electronics</td></tr>
+            <tr><td>104</td><td>P3</td><td>West</td><td>49.00</td><td>2025-01-08</td><td>Power Pack</td><td>Electronics</td></tr>
+        </table>
+    </div>
+
+    <h4>After Gold</h4>
+    <p>Aggregated for reporting: one row per (sale_date, product_id, product_name, region_id) with revenue and order count.</p>
+    <div class="example-box">
+        <p><strong>gold.daily_sales_by_product_region</strong>:</p>
+        <table>
+            <tr><th>sale_date</th><th>product_id</th><th>product_name</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>P1</td><td>Widget Pro</td><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>2025-01-08</td><td>P2</td><td>Basic Cable</td><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>P3</td><td>Power Pack</td><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">This is the table the "daily revenue by product and region" dashboard reads from. P1 in North shows revenue 59.98 (two orders: 101 and 103) and order_count 2.</p>
+    </div>
+
     <h3>Concrete code: Silver (clean, dedup, join)</h3>
     <p>Assume Bronze has <code>bronze.sales_raw</code> (from CSV) and <code>bronze.products_raw</code> (from API). Silver cleans both, dedupes by key, then joins sales to product so each line has product name and region. Grain: one row per sale line.</p>
     <div class="code-block">

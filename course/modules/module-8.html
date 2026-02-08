@@ -81,11 +81,31 @@
     <div class="flow-step"><strong>Gold:</strong> Aggregates, KPIs, and marts. Examples: daily sales by product and region, customer lifetime value, inventory snapshots. Grain is chosen for reporting (e.g. one row per product per day). Gold tables are often the direct source for dashboards and reports.</div>
     <p><strong>When to add a layer:</strong> Bronze is standard for any pipeline that lands raw data. Silver is added when you need a single, clean integration layer (multiple sources → one entity). Gold is added when you need business metrics or mart-style tables. Schema evolution (new columns, deprecated columns) is easier when layers are separated: you can add a column in Bronze, then propagate to Silver and Gold with logic.</p>
 
+    <h3>Tools and platforms by medallion layer</h3>
+    <p>Different tools and platforms are commonly used at each layer. The table below gives <strong>examples</strong>—not an exhaustive list. Many organizations mix (e.g. land to S3 for Bronze, transform with dbt in Snowflake for Silver/Gold).</p>
+    <table>
+        <thead>
+            <tr><th>Layer</th><th>Example tools &amp; platforms</th><th>Typical use</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Bronze</strong></td><td><strong>Storage:</strong> Amazon S3, Azure Data Lake Storage (ADLS), Google Cloud Storage (GCS). <strong>Streaming/landing:</strong> Apache Kafka, Amazon Kinesis, Event Hub. <strong>Orchestration/ingestion:</strong> Apache NiFi, Fivetran, Stitch, Azure Data Factory (ADF), AWS Glue, Airflow (to trigger copy). <strong>Table format (optional):</strong> Delta Lake, Apache Iceberg on object store.</td><td>Land raw files (CSV, JSON, Parquet) or stream events; append with <code>_ingested_at</code>, <code>_source_file</code>; partition by date; low-cost storage.</td></tr>
+            <tr><td><strong>Silver</strong></td><td><strong>Transform:</strong> dbt, Apache Spark (Databricks, EMR, Synapse Spark), ADF Data Flows, AWS Glue ETL. <strong>Storage/query:</strong> Snowflake, BigQuery, Redshift, Databricks SQL, Synapse Dedicated, Delta Lake tables. <strong>Orchestration:</strong> Airflow, Dagster, Prefect, ADF, Databricks Workflows.</td><td>Clean, dedupe, join; typed schema; incremental merge; often in a cloud warehouse or lakehouse.</td></tr>
+            <tr><td><strong>Gold</strong></td><td><strong>Same as Silver</strong> in many setups: dbt, Spark, or SQL in Snowflake, BigQuery, Databricks, Synapse. <strong>Semantic/cube:</strong> Looker (LookML), Power BI datasets, Tableau data model, Cube.dev. <strong>Orchestration:</strong> Same as Silver (Airflow, dbt Cloud, Databricks).</td><td>Aggregates, KPIs, marts; built from Silver; consumed by BI tools and reports.</td></tr>
+        </tbody>
+    </table>
+    <p>Typical combinations: <strong>Lakehouse</strong> (Bronze in S3/ADLS + Delta/Iceberg, Silver/Gold as Delta tables in Databricks). <strong>Warehouse-centric</strong> (Fivetran/ADF land to S3 then load to Snowflake/BigQuery; dbt builds Silver and Gold in the warehouse). <strong>Streaming</strong> (Kafka → Spark or Flink → Bronze then Silver in Delta/Kinesis).</p>
+
     <h3>Partitioning and clustering</h3>
     <p>Partitioning (e.g. by date) lets you read and write only relevant partitions—essential for incremental loads and fast queries. Clustering (e.g. by key columns within a partition) orders data so that range queries and joins are more efficient. Define partitioning in your pipeline and table DDL so that downstream consumers benefit.</p>
 
     <h3>Incremental processing</h3>
     <p><strong>Full refresh</strong> rewrites the entire table each run. It's simple but expensive for large tables. <strong>Incremental</strong> processing only reads new or changed rows from the source (using a watermark, e.g. max(updated_at)) and merges them into the target. Merge/upsert semantics: insert new rows, update existing ones by key. You must handle <strong>late-arriving</strong> data (records with a timestamp in the past that arrive in a later run)—either by re-reading a window (e.g. last 2 days) or by accepting a delay. Out-of-order data (e.g. event B arrives before event A) may require windowing or idempotent merge logic.</p>
+
+    <h3>What is SCD? (Slowly Changing Dimension)</h3>
+    <p><strong>SCD</strong> stands for <strong>Slowly Changing Dimension</strong>. A <strong>dimension</strong> is reference or lookup data—e.g. customer, product, region, employee—that describes the "who," "what," or "where" of your facts (orders, sales, events). Dimensions often <strong>change over time</strong> but not with every transaction: a customer's address or segment might be updated, a product's category might be corrected, or a store might move regions. An SCD strategy defines <strong>how you store those changes</strong> in the data warehouse: overwrite the row (no history), add a new row and keep the old one (full history), or use another pattern.</p>
+    <div class="plain-terms">
+        <strong>In short:</strong> SCD = how we handle changes in dimension tables. Type 1 = overwrite (current state only). Type 2 = keep history (multiple rows per business key with effective dates). Type 3 and others exist but Type 1 and Type 2 are the most common.
+    </div>
 
     <h3>SCD Type 1 vs. Type 2</h3>
     <div class="step-box">
@@ -175,6 +195,45 @@ GROUP BY 1, 2, 3;</code></pre>
     <h3>Do we need Bronze if we have a data lake?</h3>
     <p>Yes, in most designs. Bronze is the first durable copy of raw data. It supports audit ("what did we receive?"), replay (re-run Silver/Gold from raw after a logic fix), and cost control (raw in cheap storage, processed in warehouse). Skipping Bronze and writing only to Silver means you lose the ability to reprocess from raw and may complicate compliance. The debate is often about retention (how long to keep Bronze) and cost, not whether to have it.</p>
 
+    <h3>Dummy example: Medallion end-to-end (sales)</h3>
+    <p>Below is a <strong>dummy dataset</strong> showing the same data at Bronze, Silver, and Gold so you can see the shape of each layer.</p>
+
+    <h4>Bronze (raw)</h4>
+    <p>Raw rows as landed; mixed casing, optional metadata columns.</p>
+    <table>
+        <thead><tr><th>order_id</th><th>OrderDate</th><th>product_id</th><th>amount</th><th>_ingested_at</th></tr></thead>
+        <tbody>
+            <tr><td>ORD-1</td><td>2025-02-01</td><td>P101</td><td>49.98</td><td>2025-02-08 06:00:00</td></tr>
+            <tr><td>ORD-2</td><td>2025-02-01</td><td>P102</td><td>29.99</td><td>2025-02-08 06:00:00</td></tr>
+            <tr><td>ORD-3</td><td>2025-02-02</td><td>P101</td><td>19.99</td><td>2025-02-08 06:00:00</td></tr>
+        </tbody>
+    </table>
+
+    <h4>Silver (cleaned, typed)</h4>
+    <p>Standardized names and types; invalid rows removed; ready for joins and aggregation. Assume <code>region_id</code> came from a join with a dimension.</p>
+    <table>
+        <thead><tr><th>order_id</th><th>order_date</th><th>product_id</th><th>region_id</th><th>amount</th></tr></thead>
+        <tbody>
+            <tr><td>ORD-1</td><td>2025-02-01</td><td>P101</td><td>R1</td><td>49.98</td></tr>
+            <tr><td>ORD-2</td><td>2025-02-01</td><td>P102</td><td>R1</td><td>29.99</td></tr>
+            <tr><td>ORD-3</td><td>2025-02-02</td><td>P101</td><td>R2</td><td>19.99</td></tr>
+        </tbody>
+    </table>
+
+    <h4>Gold (aggregated)</h4>
+    <p>One row per <code>sale_date</code>, <code>product_id</code>, <code>region_id</code>: revenue and order count. This is what a report or dashboard would use.</p>
+    <table>
+        <thead><tr><th>sale_date</th><th>product_id</th><th>region_id</th><th>revenue</th><th>order_count</th></tr></thead>
+        <tbody>
+            <tr><td>2025-02-01</td><td>P101</td><td>R1</td><td>49.98</td><td>1</td></tr>
+            <tr><td>2025-02-01</td><td>P102</td><td>R1</td><td>29.99</td><td>1</td></tr>
+            <tr><td>2025-02-02</td><td>P101</td><td>R2</td><td>19.99</td><td>1</td></tr>
+        </tbody>
+    </table>
+    <div class="success-box">
+        <strong>Summary:</strong> Bronze = 3 raw rows with <code>_ingested_at</code>. Silver = same 3 rows with clean schema and <code>region_id</code> (from a join). Gold = 3 aggregated rows (grain: date + product + region) with <code>revenue</code> and <code>order_count</code>. In a real pipeline, Bronze might have more columns or duplicates; Silver would dedupe and filter; Gold might aggregate many more rows into fewer.
+    </div>
+
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
@@ -183,6 +242,7 @@ GROUP BY 1, 2, 3;</code></pre>
             <li>SCD Type 1: overwrite current row; Type 2: keep history with effective_from / effective_to.</li>
             <li>Document lineage (Bronze → Silver → Gold) and incremental strategy for each table.</li>
             <li>Silver is the layer analysts and Gold depend on; get schema and keys right there.</li>
+            <li>Tools: Bronze often uses S3/ADLS/GCS, Kafka, Fivetran/ADF/Glue; Silver/Gold use dbt, Spark, Snowflake, BigQuery, Databricks. Use the dummy Bronze → Silver → Gold example to see the shape of each layer.</li>
         </ul>
     </div>
 

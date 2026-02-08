@@ -33,16 +33,21 @@
         .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
         .key-takeaways ul { margin: 0; padding-left: 22px; }
         .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        h4 { color: #667eea; margin: 14px 0 10px; font-size: 1em; }
+        .code-block { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .code-block .code-lang { background: #667eea; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .code-block pre { margin: 0; padding: 14px; background: #1e1e1e; color: #d4d4d4; font-size: 0.9em; overflow-x: auto; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
     </style>
 </head>
 <body>
     <h2>Module 20: Capstone — Full Pipeline Project</h2>
 
     <h3>What the Capstone Covers</h3>
-    <p>One project that spans <strong>ingestion → ETL (medallion) → management (quality, staging) → storage (warehouse/lake + mart) → analytics (Power BI or Tableau)</strong>. Pick one scenario and deliver a pipeline design doc, code for Bronze/Silver/Gold, one quality check, one curated dataset, and one report or dashboard. Use generic tools and patterns.</p>
+    <p>One end-to-end project: <strong>ingestion → Bronze → Silver → Gold → quality check → curated dataset → report</strong>. You use a single defined scenario (NorthStar Retail), the same dummy data used across the course, and produce a pipeline design doc, runnable code or config, one quality check, one curated output, and one report. The capstone ties every section together; the design doc and runbook make the pipeline maintainable, and the report answers a real business question that traces back to the pipeline.</p>
 
     <div class="key-insight">
-        <strong>Key insight:</strong> The capstone ties every section together. Design doc and runbook make the pipeline maintainable; the report answers a real business question and traces back to the pipeline.
+        <strong>Key insight:</strong> The capstone is a single, concrete project—not a choice of scenarios. You build one pipeline from raw inputs to a dashboard, with clear phases and checkpoints. Design doc and runbook are required; the report is the proof that the pipeline delivers value.
     </div>
 
     <div class="diagram-box">
@@ -63,43 +68,115 @@
         </svg>
     </div>
 
-    <h3>Scenario options</h3>
+    <h3>Capstone scenario: NorthStar Retail (fixed)</h3>
+    <p>Everyone builds the same pipeline so deliverables can be compared and reviewed. <strong>Business goal:</strong> Regional managers and sales leadership need a daily report of revenue and order count by product and region, fed by one certified dataset.</p>
+    <p><strong>Sources:</strong> (1) A <strong>sales CSV</strong> dropped daily (e.g. <code>landing/sales/sales_YYYYMMDD.csv</code>) with columns: <code>sale_id</code>, <code>product_id</code>, <code>region_id</code>, <code>amount</code>, <code>sale_date</code>. (2) A <strong>product API</strong> (or static JSON) with <code>product_id</code>, <code>product_name</code>, <code>category</code>. You ingest both into a landing zone, then build Bronze → Silver → Gold. Gold = one row per (sale_date, product_id, region_id) with <code>revenue</code> (SUM amount), <code>order_count</code> (COUNT), and <code>product_name</code>. One validation rule: rows with <code>amount &lt; 0</code> or invalid <code>product_id</code> go to quarantine. One quality check after Gold: uniqueness on (sale_date, product_id, region_id). The curated output is the Gold table (or a mart view). The report (Power BI or Tableau) shows Total Revenue, Revenue by Region, and Revenue by Product, with a date/region filter.</p>
+
+    <h4>Starter data (use this for the capstone)</h4>
+    <p>Create or use these files so your pipeline has concrete inputs and expected outputs.</p>
     <div class="example-box">
-        <ul>
-            <li><strong>Retail:</strong> POS + e-commerce + returns → daily sales and inventory view → mart → executive and ops dashboards.</li>
-            <li><strong>SaaS:</strong> Product events + billing + support tickets → usage and churn metrics → mart → product and success dashboards.</li>
-            <li><strong>Internal ops:</strong> HR + finance + project data → headcount, cost, project status → mart → management reporting.</li>
-        </ul>
+        <p><strong>landing/sales/sales_20250108.csv</strong></p>
+        <pre style="margin:0;padding:10px;background:#f5f5f5;border-radius:4px;font-size:0.85em;">sale_id,product_id,region_id,amount,sale_date
+101,P1,North,29.99,2025-01-08
+102,P2,South,14.50,2025-01-08
+103,P1,North,29.99,2025-01-08
+104,P3,West,49.00,2025-01-08</pre>
+        <p><strong>landing/api_products/products.json</strong> (or equivalent)</p>
+        <pre style="margin:0;padding:10px;background:#f5f5f5;border-radius:4px;font-size:0.85em;">[{"product_id":"P1","product_name":"Widget Pro","category":"Electronics"},
+ {"product_id":"P2","product_name":"Basic Cable","category":"Accessories"},
+ {"product_id":"P3","product_name":"Power Pack","category":"Electronics"}]</pre>
+        <p><strong>Expected Gold (after your pipeline runs) for 2025-01-08:</strong></p>
+        <table>
+            <tr><th>sale_date</th><th>product_id</th><th>product_name</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>P1</td><td>Widget Pro</td><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>2025-01-08</td><td>P2</td><td>Basic Cable</td><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>P3</td><td>Power Pack</td><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
     </div>
-    <h3>Deliverables</h3>
+
+    <h3>Capstone phases and tasks</h3>
+    <p>Work through these phases in order. Each phase has concrete tasks and a checkpoint you can verify before moving on.</p>
+
+    <h4>Phase 1: Design (design doc)</h4>
+    <ul>
+        <li><strong>1.1</strong> Write a short pipeline design doc (1–2 pages) that includes: <strong>Sources</strong> (sales CSV, product API); <strong>Landing</strong> (paths, format); <strong>Bronze</strong> (tables/files, append strategy, metadata columns); <strong>Silver</strong> (clean, dedup, join sales to product; grain: one row per sale line); <strong>Gold</strong> (grain: one row per sale_date, product_id, region_id; measures: revenue, order_count); <strong>Validation</strong> (rule: amount ≥ 0, product_id in product list; quarantine table); <strong>Quality check</strong> (uniqueness on Gold grain); <strong>Storage</strong> (where Gold lives); <strong>Refresh</strong> (daily, after sources land).</li>
+        <li><strong>1.2</strong> Add one paragraph on <strong>failure/recovery</strong>: what happens if the CSV is missing or the API is down; who is alerted; how to backfill.</li>
+    </ul>
+    <div class="step-box"><p><strong>Checkpoint:</strong> Another person can read your design doc and understand the flow and where each piece of data lives.</p></div>
+
+    <h4>Phase 2: Implementation (Bronze, Silver, Gold)</h4>
+    <ul>
+        <li><strong>2.1 Ingest and landing:</strong> Script or config that reads the sales CSV and product API (or JSON file) and writes them to a landing area. Run it with the starter data; confirm landing files exist.</li>
+        <li><strong>2.2 Bronze:</strong> Code that copies landing data into Bronze (e.g. <code>bronze.sales_raw</code>, <code>bronze.products_raw</code>) with at least <code>_ingested_at</code>. Output: Bronze contains the same rows as landing plus metadata.</li>
+        <li><strong>2.3 Silver:</strong> Code that cleans and deduplicates sales (e.g. by sale_id), joins sales to product to get product_name and category, and writes <code>silver.sales_enriched</code>. Route rows with amount &lt; 0 or invalid product_id to quarantine.</li>
+        <li><strong>2.4 Gold:</strong> Code that aggregates Silver to Gold: one row per (sale_date, product_id, region_id, product_name) with SUM(amount) as revenue and COUNT(DISTINCT sale_id) as order_count. Run the full pipeline on the starter data and confirm Gold matches the expected table above.</li>
+    </ul>
+    <div class="step-box"><p><strong>Checkpoint:</strong> Given the starter CSV and products JSON, your pipeline produces exactly the expected Gold table.</p></div>
+
+    <h4>Phase 3: Quality and curation</h4>
+    <ul>
+        <li><strong>3.1 Quality check:</strong> Implement one automated check after Gold: e.g. uniqueness on (sale_date, product_id, region_id) must return 0 duplicates. Document how it is wired and what happens when it fails.</li>
+        <li><strong>3.2 Curated dataset:</strong> Define the curated output (Gold or mart view) and write a one-paragraph data dictionary (columns, grain, caveats).</li>
+    </ul>
+
+    <h4>Phase 4: Report</h4>
+    <ul>
+        <li><strong>4.1</strong> Build one report in Power BI or Tableau connected to Gold (or export). Include: KPI (Total Revenue, Total Orders); Revenue by Region; Revenue by Product; a filter (date/region); one DAX measure or calculated field (e.g. Revenue YoY % or Avg Revenue per Order).</li>
+        <li><strong>4.2</strong> Fill out a one-page <strong>report card</strong>: purpose, audience, data source, refresh frequency, one improvement next.</li>
+    </ul>
+    <div class="step-box"><p><strong>Checkpoint:</strong> With the starter data, the report shows Total Revenue 123.48, Revenue by Region (North 59.98, South 14.50, West 49.00), and Revenue by Product (Widget Pro 59.98, Basic Cable 14.50, Power Pack 49.00). Numbers trace back to Gold.</p></div>
+
+    <h4>Phase 5: Runbook and handoff</h4>
+    <ul>
+        <li><strong>5.1 Runbook:</strong> Document at least three items: (1) How to run the pipeline. (2) What to do if the sales CSV is missing or empty. (3) What to do if the quality check fails. Optionally: backfill a date; who to contact for source issues.</li>
+        <li><strong>5.2 Handoff:</strong> One-paragraph pipeline summary for an analyst or new engineer: what the pipeline does, where the report gets its data, where to find the design doc and runbook.</li>
+    </ul>
+
+    <h3>Deliverables checklist</h3>
+    <div class="example-box">
+        <table>
+            <tr><th>Deliverable</th><th>What to submit</th></tr>
+            <tr><td>Design doc</td><td>1–2 pages: sources, landing, Bronze, Silver, Gold, validation, quality check, storage, refresh, failure/recovery.</td></tr>
+            <tr><td>Code/config</td><td>Runnable ingestion + Bronze + Silver + Gold; validation and quarantine; quality check.</td></tr>
+            <tr><td>Curated dataset</td><td>Definition (Gold or mart) + short data dictionary.</td></tr>
+            <tr><td>Report</td><td>PBIX or TWBX (or link) with KPI, Revenue by Region, Revenue by Product, one filter, one measure.</td></tr>
+            <tr><td>Report card</td><td>Purpose, audience, data source, refresh, one improvement.</td></tr>
+            <tr><td>Runbook</td><td>At least 3 items: how to run; CSV missing; quality check fails.</td></tr>
+            <tr><td>Pipeline summary</td><td>One paragraph for handoff.</td></tr>
+        </table>
+    </div>
+
+    <h3>Success criteria (rubric)</h3>
     <div class="step-box">
         <ul>
-            <li>Pipeline design doc (sources, layers, storage, refresh).</li>
-            <li>Code/config for at least Bronze → Silver → Gold.</li>
-            <li>One data quality check and one curated dataset.</li>
-            <li>One report or dashboard (Power BI or Tableau) with short narrative.</li>
+            <li><strong>Design:</strong> Design doc clearly describes the flow and decisions; another reader can follow it.</li>
+            <li><strong>Pipeline:</strong> On starter data, pipeline produces the expected Gold table; validation routes bad rows to quarantine; quality check is implemented and documented.</li>
+            <li><strong>Report:</strong> Report connects to Gold; shows correct totals and breakdowns for the starter data; has at least one filter and one business measure.</li>
+            <li><strong>Operability:</strong> Runbook covers run, missing source, and quality failure; pipeline summary enables handoff.</li>
         </ul>
     </div>
+
     <h3>By role</h3>
     <div class="step-box">
-        <p><strong>Architect:</strong> Lead or review the design doc; present trade-offs (batch vs. stream, layers, storage, tooling) and failure/recovery strategy.</p>
-        <p><strong>Engineer:</strong> Own implementation (ingestion, medallion, quality, optional orchestration); document runbook items (e.g. “if source fails, do X”).</p>
-        <p><strong>Analyst:</strong> Own the report/dashboard and “data request” one-pager; present from a stakeholder perspective (question answered, refresh, one caveat).</p>
+        <p><strong>Architect:</strong> Lead or review the design doc; present trade-offs (batch, storage, tooling) and failure/recovery strategy. Review one other team's design for single points of failure and scalability.</p>
+        <p><strong>Engineer:</strong> Own implementation (ingestion, Bronze, Silver, Gold, validation, quality check); write the runbook and pipeline summary; confirm pipeline produces expected Gold on starter data.</p>
+        <p><strong>Analyst:</strong> Own the report, report card, and data dictionary; trace one visual (e.g. Total Revenue) back to the Gold column and pipeline; present from a stakeholder perspective (question answered, refresh, one caveat).</p>
     </div>
 
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
-            <li>Full span: ingestion to medallion to quality to storage (warehouse/lake + mart) to report/dashboard.</li>
-            <li>Deliverables: design doc, Bronze/Silver/Gold code, one quality check, one curated dataset, one report.</li>
-            <li>Document runbook (e.g. if source fails, do X); present from stakeholder perspective (question answered, refresh, caveat).</li>
+            <li>Capstone is one fixed scenario (NorthStar Retail): same starter data, same expected Gold, same report targets so work is comparable.</li>
+            <li>Five phases: Design doc → Implementation (ingest, Bronze, Silver, Gold) → Quality and curation → Report → Runbook and handoff. Each phase has a checkpoint.</li>
+            <li>Deliverables: design doc, runnable code (with validation and quality check), curated dataset definition, report (PBIX/TWBX), report card, runbook (≥3 items), pipeline summary.</li>
+            <li>Success = expected Gold on starter data, correct report numbers, and runbook that covers run, missing source, and quality failure.</li>
         </ul>
     </div>
 
     <h3>Real-World Applications</h3>
     <ul>
-        <li><strong>Retail:</strong> POS + e-commerce to daily sales to mart to exec and ops dashboards.</li>
-        <li><strong>SaaS:</strong> Events + billing + support to usage and churn to mart to product and success dashboards.</li>
+        <li><strong>Retail (this capstone):</strong> Sales CSV + product API → Bronze → Silver → Gold → quality check → report (revenue by region/product).</li>
+        <li><strong>Same pattern elsewhere:</strong> Replace sources and grain (e.g. SaaS events, HR data); keep design doc, medallion, quality, runbook, and report card.</li>
     </ul>
 
     <div class="info-box"><strong>Relationship to other modules:</strong> Module 21 covers simulation (failure and recovery) and the holistic “business question → pipeline → report” flow; Module 22 is the roadmap and next steps.</div>

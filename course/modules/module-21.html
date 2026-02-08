@@ -28,39 +28,111 @@
         .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
         .key-takeaways ul { margin: 0; padding-left: 22px; }
         .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        .do-step { background: #e8f0ff; border-left: 4px solid #667eea; padding: 12px 16px; margin: 10px 0; border-radius: 4px; }
+        .observe-step { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 10px 0; border-radius: 4px; }
+        .fix-step { background: #d4edda; border-left: 4px solid #28a745; padding: 12px 16px; margin: 10px 0; border-radius: 4px; }
+        .reveal-btn { background: #764ba2; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9em; margin-top: 8px; }
+        .reveal-btn:hover { background: #5a3a8a; }
+        .reveal-box { display: none; margin-top: 10px; padding: 14px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; }
+        .reveal-box.show { display: block; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 8px 10px; text-align: left; }
+        td { padding: 8px 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
     </style>
 </head>
 <body>
     <h2>Module 21: Simulation & Holistic View</h2>
 
     <h3>What This Module Covers</h3>
-    <p><strong>Simulation</strong> lets you practice failure and recovery in a safe setting (e.g. missing file, schema change, duplicate key). The <strong>holistic view</strong> ties the course together: business question → data need → pipeline design → storage → report → action.</p>
+    <p><strong>Simulation</strong> lets you practice failure and recovery in a safe setting: you break the NorthStar capstone pipeline on purpose (missing file, schema change, duplicate key), diagnose, fix, and document. The <strong>holistic view</strong> ties the course together: business question to data need to pipeline to storage to report to action.</p>
 
     <div class="key-insight">
-        <strong>Key insight:</strong> Breaking the pipeline on purpose (missing file, schema change, duplicate key) and fixing it in a time box builds operational confidence. The "question → pipeline → report" roundtable connects everything to real business questions.
+        <strong>Key insight:</strong> Breaking the pipeline on purpose and fixing it in a time box builds operational confidence. Follow the interactive steps below with your capstone (or starter data); then connect one business question end-to-end with the holistic view.
     </div>
 
-    <h3>Simulation: Failure and recovery</h3>
-    <p>Scenarios to practice:</p>
-    <div class="example-box">
-        <ul>
-            <li><strong>Source file missing</strong> → pipeline fails → fix (retry, fallback, alert) and re-run.</li>
-            <li><strong>Schema change</strong> (new required column) → pipeline breaks → update Silver and Gold and deploy.</li>
-            <li><strong>Duplicate key in source</strong> → duplicate rows in Gold → add dedup and backfill.</li>
-        </ul>
+        <h3>Simulation setup</h3>
+    <p>Use your <strong>Module 20 capstone</strong> pipeline (or the same NorthStar setup): landing folder with <code>sales_20250108.csv</code> and <code>products.json</code>, then Bronze to Silver to Gold. Work through each scenario in order. After each scenario, update your runbook. Time box: e.g. 15 minutes per scenario.</p>
+
+    <h3>Simulation 1: Missing source file</h3>
+    <p><strong>Goal:</strong> See how the pipeline behaves when the sales CSV is missing; then recover and document the response.</p>
+    <div class="step-box">
+        <p><strong>Step 1 - Do:</strong> Remove or rename the sales file (e.g. move <code>landing/sales/sales_20250108.csv</code> to <code>sales_20250108.csv.bak</code> or delete it).</p>
+        <p><strong>Step 2 - Do:</strong> Run your pipeline (ingest to Bronze to Silver to Gold) as you normally would.</p>
+        <p><strong>Step 3 - Observe:</strong> Where does it fail? (Ingest? Bronze? Note the error or log.) Does Gold get updated with old data, or does the run stop?</p>
+        <p><strong>Step 4 - Do:</strong> Restore the file and re-run. Confirm Gold is correct for the restored date.</p>
+        <p><strong>Step 5 - Document:</strong> In your runbook, add: If the sales CSV for date D is missing: [what you observed]. Action: [retry / alert / skip]. Re-run after fixing.</p>
+        <button type="button" class="reveal-btn" onclick="reveal(1)">Reveal suggested runbook entry</button>
+        <div class="reveal-box" id="reveal-1"><strong>Suggested runbook entry:</strong> If <code>landing/sales/sales_YYYYMMDD.csv</code> is missing: ingest fails with file not found. Action: 1) Alert; 2) Confirm with source if file is delayed; 3) Retry after N min or skip and document gap. Re-run after file is available.</div>
     </div>
-    <p>Instructor or script “breaks” the pipeline; teams diagnose and fix in a time box; debrief on steps. Rotate: one person breaks, another fixes.</p>
-    <h3>Holistic view: Business question → answer</h3>
-    <div class="flow-step">1. Start with a business question (e.g. “Why did churn increase in Q3?”).</div>
-    <div class="flow-step">2. Map to data need: which events, billing, support; which layers; which mart; which report.</div>
-    <div class="flow-step">3. Discuss what’s missing and what’s next (e.g. real-time, ML).</div>
-    <p>Roundtable: each participant brings one real business question; group picks two and walks through “question → pipeline → report” on a whiteboard. One-pager: data request template (question, needed data, suggested pipeline change, expected output).</p>
+
+    <h3>Simulation 2: Schema change (new column)</h3>
+    <p><strong>Goal:</strong> Simulate the source adding a new column; see where the pipeline breaks; update the pipeline and re-run.</p>
+    <div class="step-box">
+        <p><strong>Step 1 - Do:</strong> Add a new column to the sales CSV (e.g. <code>store_id</code> as second column). Example header: <code>sale_id,store_id,product_id,region_id,amount,sale_date</code>; add a value (e.g. S1) per row.</p>
+        <p><strong>Step 2 - Do:</strong> Run the pipeline without changing any code.</p>
+        <p><strong>Step 3 - Observe:</strong> Does it succeed (reader ignores extras) or fail (column mismatch, wrong product_id)? Note where it fails.</p>
+        <p><strong>Step 4 - Do:</strong> Update the pipeline to handle the new column (e.g. Silver column list or schema). Re-run and confirm Gold is correct.</p>
+        <p><strong>Step 5 - Document:</strong> Runbook: Schema change (new column): update [Bronze/Silver] schema; test; deploy and re-run.</p>
+        <button type="button" class="reveal-btn" onclick="reveal(2)">Reveal suggested runbook entry</button>
+        <div class="reveal-box" id="reveal-2"><strong>Suggested runbook entry:</strong> Schema change (new column in sales CSV): 1) Update ingest/Bronze to read new columns or ignore; 2) Update Silver column list so grain/keys unchanged; 3) If Gold/report need it, add column and refresh. Test with one file first.</div>
+    </div>
+
+    <h3>Simulation 3: Duplicate key in source</h3>
+    <p><strong>Goal:</strong> Introduce a duplicate <code>sale_id</code>; see duplicates in Gold; add deduplication and fix.</p>
+    <div class="step-box">
+        <p><strong>Step 1 - Do:</strong> Edit the sales CSV so the same <code>sale_id</code> appears twice (e.g. duplicate the row for 101).</p>
+        <p><strong>Step 2 - Do:</strong> Run the pipeline. Check Gold row counts and sample rows for 2025-01-08.</p>
+        <p><strong>Step 3 - Observe:</strong> Do you see two rows in Gold for the same (sale_date, product_id, region_id)? Or did SUM double the revenue? Note the incorrect outcome.</p>
+        <p><strong>Step 4 - Do:</strong> Add deduplication in Silver (e.g. one row per sale_id by ROW_NUMBER() OVER (PARTITION BY sale_id ORDER BY _ingested_at)). Re-run from Silver or full refresh. Confirm Gold has one row per grain and totals match expected.</p>
+        <p><strong>Step 5 - Document:</strong> Runbook: Duplicate sale_id: Silver must dedupe by sale_id. If Gold already has duplicates: backfill affected dates or full refresh.</p>
+        <button type="button" class="reveal-btn" onclick="reveal(3)">Reveal suggested runbook entry</button>
+        <div class="reveal-box" id="reveal-3"><strong>Suggested runbook entry:</strong> Duplicate sale_id in source: 1) Silver dedup by sale_id (keep latest by _ingested_at); 2) Backfill Gold for affected dates or full refresh Silver and Gold. Validate: Gold uniqueness check returns 0 duplicates.</div>
+    </div>
+
+    <h3>Debrief</h3>
+    <p>After all three: Which failure was hardest to diagnose? Which fix took the longest? Did your runbook entries match the suggestions? Optional: rotate - one person breaks (Step 1), another diagnoses and fixes; then swap.</p>
+
+    <h3>Holistic view: Business question to pipeline to report</h3>
+    <p>Connect one business question to data, pipeline, and report.</p>
+    <div class="flow-step">1. <strong>Business question:</strong> e.g. Why did North region revenue drop this week vs last week?</div>
+    <div class="flow-step">2. <strong>Data need:</strong> Gold with revenue by region and date; two weeks. Source: sales CSV + product API to Bronze to Silver to Gold.</div>
+    <div class="flow-step">3. <strong>Pipeline and storage:</strong> <code>gold.daily_sales_by_product_region</code>; report connects to it; refresh daily.</div>
+    <div class="flow-step">4. <strong>Report:</strong> Filter to North; date range this week vs last week; KPI or bar chart.</div>
+    <div class="flow-step">5. <strong>Follow-up:</strong> What is missing (e.g. store-level, promotions)? What to add next?</div>
+
+    <h4>Interactive: Map your own question</h4>
+    <p>Fill in the template below. Example column is NorthStar.</p>
+    <div class="example-box">
+        <table>
+            <tr><th>Your answer</th><th>Example (NorthStar)</th></tr>
+            <tr><td>Business question:</td><td>Why did North revenue drop this week vs last week?</td></tr>
+            <tr><td>Data needed:</td><td>Gold: sale_date, region_id, revenue; 2 weeks</td></tr>
+            <tr><td>Pipeline source and layer:</td><td>Sales CSV + product API to Bronze to Silver to Gold</td></tr>
+            <tr><td>Report (visual/filter):</td><td>Filter region=North; this week vs last week; KPI or bar</td></tr>
+            <tr><td>One thing to add next:</td><td>Store-level breakdown or promotion calendar</td></tr>
+        </table>
+        <p style="margin-top:10px;font-size:0.9em;color:#666;">Write your question and one row of data needed and report; share with a partner and walk through question to pipeline to report in 2 minutes.</p>
+    </div>
+
+    <h3>Data request one-pager (template)</h3>
+    <div class="step-box">
+        <ul>
+            <li><strong>Business question:</strong> [What do we need to answer?]</li>
+            <li><strong>Needed data:</strong> [Which tables, columns, date range? Which source?]</li>
+            <li><strong>Suggested pipeline change:</strong> [New source? New column? New mart? Backfill?]</li>
+            <li><strong>Expected output:</strong> [Report or table; what the user will see.]</li>
+        </ul>
+        <p><strong>Interactive:</strong> Fill this out for one request (e.g. Add store_id to the NorthStar report). Trace: which pipeline layer you would change, which report visual, and one runbook update.</p>
+    </div>
+
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
-            <li>Simulation: missing file, schema change, duplicate key; diagnose and fix in a time box; debrief on steps.</li>
-            <li>Holistic: business question to data need to pipeline to storage to report; discuss what is missing and what is next.</li>
-            <li>Data request template: question, needed data, pipeline change, expected output.</li>
+            <li>Three simulations with interactive steps: (1) Missing file: remove CSV, run, observe, restore, document runbook. (2) Schema change: add column, run, observe, update pipeline, document. (3) Duplicate key: duplicate sale_id, run, observe, add dedup, document. Use Reveal buttons for suggested runbook entries.</li>
+            <li>Holistic view: business question to data need to pipeline to storage to report; map your own question in the table; use the data request template for new requests.</li>
+            <li>Debrief: which failure was hardest; rotate who breaks and who fixes; update runbook after each scenario.</li>
         </ul>
     </div>
 
@@ -103,7 +175,10 @@
             <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> Dedup in Silver/Gold and backfill corrects the issue.</div>
         </div>
     </div>
-    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
+    <script>
+    function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}
+    function reveal(n){var el=document.getElementById('reveal-'+n);if(el){el.classList.add('show');}}
+    </script>
 <script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
 </body>
 </html>

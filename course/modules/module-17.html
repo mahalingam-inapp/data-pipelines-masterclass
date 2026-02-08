@@ -32,6 +32,11 @@
         .key-takeaways h4 { color: #155724; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; }
         .key-takeaways ul { margin: 0; padding-left: 22px; }
         .key-takeaways li { margin-bottom: 8px; line-height: 1.6; }
+        h4 { color: #667eea; margin: 14px 0 8px; font-size: 1em; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th { background: #667eea; color: white; padding: 8px 10px; text-align: left; }
+        td { padding: 8px 10px; border: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
     </style>
 </head>
 <body>
@@ -43,6 +48,8 @@
     <div class="key-insight">
         <strong>Key insight:</strong> Star schema + measures in DAX + filters define how numbers flow. RLS and aggregations keep reports fast and secure when data grows.
     </div>
+
+    <p><strong>Why Power BI fits pipeline data:</strong> Your Gold or mart tables (e.g. <code>gold.daily_sales_by_product_region</code>) are ideal for Power BI: they are already aggregated and clean. Power BI’s <strong>Import</strong> mode loads that data into an in-memory model for fast interactivity; <strong>DirectQuery</strong> runs queries live against the source when data is too large or must be real-time. <strong>Power Query</strong> (M) shapes data at refresh; <strong>DAX</strong> defines metrics once and reuses them across all visuals. That keeps “one version of the truth” for KPIs like revenue and growth %.</p>
 
     <div class="diagram-box">
         <div class="diagram-title">Star schema (one fact, many dimensions)</div>
@@ -61,17 +68,154 @@
         </svg>
     </div>
 
+    <h3>Dummy data: NorthStar Retail sales model</h3>
+    <p>We use the same NorthStar scenario as in earlier modules. Below is <strong>dummy data</strong> that could come from your Gold table (or mart), plus dimension tables. This is what you would load into Power BI to build the model.</p>
+
+    <h4>Fact table: Sales (from Gold)</h4>
+    <div class="example-box">
+        <table>
+            <tr><th>sale_date</th><th>product_id</th><th>region_id</th><th>revenue</th><th>order_count</th></tr>
+            <tr><td>2025-01-08</td><td>P1</td><td>North</td><td>59.98</td><td>2</td></tr>
+            <tr><td>2025-01-08</td><td>P2</td><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>2025-01-08</td><td>P3</td><td>West</td><td>49.00</td><td>1</td></tr>
+            <tr><td>2025-01-09</td><td>P1</td><td>North</td><td>29.99</td><td>1</td></tr>
+            <tr><td>2025-01-09</td><td>P2</td><td>North</td><td>14.50</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Five rows across two days. In Power BI this becomes the fact table <strong>Sales</strong>; <code>sale_date</code>, <code>product_id</code>, and <code>region_id</code> link to dimensions.</p>
+    </div>
+
+    <h4>Dimension tables</h4>
+    <div class="example-box">
+        <p><strong>DimProduct</strong></p>
+        <table>
+            <tr><th>product_id</th><th>product_name</th><th>category</th></tr>
+            <tr><td>P1</td><td>Widget Pro</td><td>Electronics</td></tr>
+            <tr><td>P2</td><td>Basic Cable</td><td>Accessories</td></tr>
+            <tr><td>P3</td><td>Power Pack</td><td>Electronics</td></tr>
+        </table>
+        <p><strong>DimRegion</strong></p>
+        <table>
+            <tr><th>region_id</th><th>region_name</th></tr>
+            <tr><td>North</td><td>North</td></tr>
+            <tr><td>South</td><td>South</td></tr>
+            <tr><td>West</td><td>West</td></tr>
+        </table>
+        <p><strong>DimDate</strong> (minimal: one row per date used)</p>
+        <table>
+            <tr><th>Date</th><th>Year</th><th>Month</th><th>MonthName</th></tr>
+            <tr><td>2025-01-08</td><td>2025</td><td>1</td><td>January</td></tr>
+            <tr><td>2025-01-09</td><td>2025</td><td>1</td><td>January</td></tr>
+        </table>
+    </div>
+
+    <h4>Relationships in Power BI</h4>
+    <p>In the model, create relationships: <strong>Sales</strong>[sale_date] → <strong>DimDate</strong>[Date], <strong>Sales</strong>[product_id] → <strong>DimProduct</strong>[product_id], <strong>Sales</strong>[region_id] → <strong>DimRegion</strong>[region_id]. Use a single direction (many-to-one from fact to dimensions) so filter context flows from dimensions to the fact table. Mark <strong>DimDate</strong>[Date] as a <strong>Date table</strong> so time intelligence works.</p>
+
+    <h3>Power Query (M): Get Data and transform</h3>
+    <p>Before data reaches the model, <strong>Power Query</strong> (M language) loads and shapes it. You connect via Get Data (e.g. Excel, CSV, SQL, Web), then apply steps: remove columns, change types, filter rows, add columns. The result is the table that loads into the model. Below: example M code that could come from “Get Data → Text/CSV” and “Transform data”.</p>
+    <div class="code-block">
+        <div class="code-lang">Power Query M: load CSV and prepare Sales table</div>
+        <pre><code>let
+    Source = Csv.Document(File.Contents("C:\data\gold_sales.csv"), [Delimiter=",", Encoding=65001]),
+    PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalar=true]),
+    ChangedTypes = Table.TransformColumnTypes(PromotedHeaders, {
+        {"sale_date", type date},
+        {"product_id", type text},
+        {"region_id", type text},
+        {"revenue", type number},
+        {"order_count", Int64.Type}
+    }),
+    FilteredRows = Table.SelectRows(ChangedTypes, each [sale_date] >= #date(2025, 1, 1))
+in
+    FilteredRows</code></pre>
+    </div>
+    <p>Steps: read CSV → promote headers → set column types → filter to dates on or after 2025-01-01. In the Power Query editor you see each step; you can edit M directly in the Advanced Editor.</p>
+    <div class="code-block">
+        <div class="code-lang">Power Query M: add a calculated column (e.g. Revenue per order)</div>
+        <pre><code>// Add column: RevenuePerOrder = revenue / order_count
+Table.AddColumn(FilteredRows, "RevenuePerOrder", each [revenue] / [order_count], type number)</code></pre>
+    </div>
+
     <h3>Data model and DAX</h3>
-    <p>Star schema: one fact table (e.g. sales) and dimension tables (product, region, date). Relationships define how filters flow. Measures vs. columns: measures aggregate (SUM, COUNT); columns are stored. DAX supports time intelligence (YTD, prior period) and ratios. Example measure:</p>
-    <div class="calculation-box">Revenue YoY % = DIVIDE([Total Revenue] - [Revenue LY], [Revenue LY])</div>
-    <p>Another example: YTD revenue using time intelligence.</p>
+    <p>Star schema: one fact table (e.g. Sales) and dimension tables (Product, Region, Date). <strong>Relationships</strong> define how filters flow: when a user selects a region on a slicer, the model filters the fact table to that region’s rows. <strong>Measures</strong> are DAX expressions that aggregate in the current filter context; <strong>calculated columns</strong> are computed row-by-row at refresh. Prefer measures for KPIs so they respect slicers and visuals.</p>
+
+    <h4>DAX: base measures</h4>
+    <p>Base measures sum or count the fact table. They are reused in more complex measures.</p>
+    <div class="code-block">
+        <div class="code-lang">DAX (Sales table)</div>
+        <pre><code>Total Revenue = SUM(Sales[revenue])
+Total Orders = SUM(Sales[order_count])
+Avg Revenue per Order = DIVIDE([Total Revenue], [Total Orders], 0)</code></pre>
+    </div>
+    <p>With the dummy data and no filters: <strong>Total Revenue</strong> = 59.98 + 14.50 + 49.00 + 29.99 + 14.50 = <strong>167.97</strong>. <strong>Total Orders</strong> = 2+1+1+1+1 = <strong>6</strong>. If the user filters to Region = North, the same measures evaluate only on North rows (59.98 + 29.99 = 89.97 revenue, 3 orders).</p>
+
+    <h4>DAX: time intelligence</h4>
+    <p>Time intelligence requires a <strong>Date</strong> table (one row per date, marked as “Date table” in Power BI). Then you can use <code>TOTALYTD</code>, <code>SAMEPERIODLASTYEAR</code>, etc.</p>
     <div class="code-block">
         <div class="code-lang">DAX</div>
-        <pre><code>Revenue YTD = TOTALYTD(SUM(Sales[Revenue]), 'Date'[Date])
-Revenue Prior Year = CALCULATE([Total Revenue], SAMEPERIODLASTYEAR('Date'[Date]))</code></pre>
+        <pre><code>Revenue YTD = TOTALYTD([Total Revenue], DimDate[Date])
+Revenue Prior Year = CALCULATE([Total Revenue], SAMEPERIODLASTYEAR(DimDate[Date]))
+Revenue YoY % = DIVIDE([Total Revenue] - [Revenue Prior Year], [Revenue Prior Year], 0)</code></pre>
     </div>
+    <p>For our dummy data (only Jan 8–9, 2025), <strong>Revenue YTD</strong> equals Total Revenue (whole period). <strong>Revenue Prior Year</strong> would be the same dates in 2024 (no data → 0). <strong>Revenue YoY %</strong> would be blank or 0 when prior year is empty; with prior-year data it shows growth.</p>
+
+    <h4>DAX: filter context and CALCULATE</h4>
+    <p><code>CALCULATE</code> changes or adds filter context. Use it to compute “all regions” inside a region filter, or to apply a custom filter.</p>
+    <div class="code-block">
+        <div class="code-lang">DAX</div>
+        <pre><code>Revenue % of Total = DIVIDE([Total Revenue], CALCULATE([Total Revenue], ALL(DimRegion[region_id])), 0)
+Revenue North Only = CALCULATE([Total Revenue], DimRegion[region_id] = "North")</code></pre>
+    </div>
+    <p><strong>Revenue % of Total</strong>: denominator uses <code>ALL(DimRegion)</code> so it ignores the region slicer and gives total revenue across all regions; the numerator still respects the slicer. So when Region = North, you see North revenue / Total revenue. <strong>Revenue North Only</strong> forces the measure to North regardless of slicer (useful in a card or table column).</p>
+
+    <h3>Analytics showcase: what the report shows with the dummy data</h3>
+    <p>Using the five-row Sales fact and dimensions above, here is what a typical Power BI report would show and how the numbers are derived.</p>
+    <div class="example-box">
+        <h4>KPI card (no filters)</h4>
+        <ul>
+            <li><strong>Total Revenue</strong>: 167.97 (sum of all five rows)</li>
+            <li><strong>Total Orders</strong>: 6</li>
+            <li><strong>Avg Revenue per Order</strong>: 167.97 / 6 ≈ 27.995</li>
+        </ul>
+    </div>
+    <div class="example-box">
+        <h4>Revenue by Region (bar chart: Region on axis, Total Revenue as value)</h4>
+        <table>
+            <tr><th>Region</th><th>Revenue</th><th>Orders</th></tr>
+            <tr><td>North</td><td>89.97</td><td>3</td></tr>
+            <tr><td>South</td><td>14.50</td><td>1</td></tr>
+            <tr><td>West</td><td>49.00</td><td>1</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">North = 59.98 + 29.99 + 14.50 (two P1 rows and one P2 row for North); South and West each have one row.</p>
+    </div>
+    <div class="example-box">
+        <h4>Revenue by Product (matrix: Product rows, Region columns, Total Revenue as value)</h4>
+        <table>
+            <tr><th>Product</th><th>North</th><th>South</th><th>West</th><th>Total</th></tr>
+            <tr><td>Widget Pro (P1)</td><td>89.97</td><td>—</td><td>—</td><td>89.97</td></tr>
+            <tr><td>Basic Cable (P2)</td><td>14.50</td><td>14.50</td><td>—</td><td>29.00</td></tr>
+            <tr><td>Power Pack (P3)</td><td>—</td><td>—</td><td>49.00</td><td>49.00</td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:0.9em;color:#666;">Same measures; filter context comes from the matrix (product + region). Empty cells = no sales for that product/region.</p>
+    </div>
+    <div class="example-box">
+        <h4>Revenue % of Total by Region (slicer: Region = North)</h4>
+        <p>With <strong>Revenue % of Total</strong> = North revenue / All regions revenue: 89.97 / 167.97 ≈ <strong>53.6%</strong>. Other regions show their share when selected or when “All” is selected.</p>
+    </div>
+    <p>This is how pipeline Gold data becomes actionable in Power BI: one model, one set of measures, many visuals and filters that slice the same numbers differently.</p>
+
     <h3>Visuals and dashboards</h3>
-    <p>Choose visuals for the story (bar, line, matrix, map). Use filters (visual, page, report), drill-through, and bookmarks. For performance: reduce columns, use aggregations, consider DirectQuery vs. import. Sharing: workspace, apps; RLS for row-level security.</p>
+    <p>Choose visuals for the story: <strong>KPI cards</strong> for totals and growth %; <strong>bar/column charts</strong> for Revenue by Region or Product; <strong>line charts</strong> for trend over time; <strong>matrix</strong> for Product × Region; <strong>slicers</strong> for Region, Date, Product. Use <strong>filters</strong>: visual-level (only that visual), page-level (all on the page), report-level (entire report). <strong>Drill-through</strong> lets a user right-click a data point and open a detail page filtered to that point. <strong>Bookmarks</strong> save filter and visual state for a “story” or export. For performance: reduce columns in the model, use <strong>aggregations</strong> (pre-summarized tables) for large fact tables, and choose <strong>Import</strong> (fast, refresh on schedule) vs. <strong>DirectQuery</strong> (live, for very large or real-time data). <strong>RLS</strong> (row-level security): define roles and DAX rules (e.g. <code>DimRegion[region_id] = USERPRINCIPALNAME()</code>) so users only see allowed rows. Share via <strong>workspaces</strong> and <strong>apps</strong>; schedule refresh in the Power BI service.</p>
+
+    <h3>RLS (row-level security) in DAX</h3>
+    <p>RLS restricts which rows a user sees. You create a <strong>role</strong> and assign a DAX filter to a table (usually a dimension). Only rows that pass the filter are visible. Example: “Regional managers see only their region.”</p>
+    <div class="code-block">
+        <div class="code-lang">DAX (RLS filter on DimRegion for role &quot;RegionalManager&quot;)</div>
+        <pre><code>DimRegion[region_id] = "North"
+// In practice: lookup user's region, e.g. via a UserRegion table:
+// LOOKUPVALUE(UserRegion[region_id], UserRegion[email], USERPRINCIPALNAME())</code></pre>
+    </div>
+    <p>When a user in the RegionalManager role opens the report, all visuals only show North data because the model filters DimRegion to North, and that filter flows to Sales via the relationship.</p>
 
     <h3>Preparing data for Power BI: Python and R</h3>
     <p><strong>Process:</strong> Gold or mart data is often imported into Power BI (Get Data → Database or File). You can pre-shape or validate the dataset in Python or R, then export so Power BI imports it. <strong>Components:</strong> source (Gold/mart), transform (filter, aggregate, rename), output (CSV, Parquet, or DB table). <strong>Outcome:</strong> a clean dataset and a repeatable script for refresh.</p>
@@ -95,20 +239,34 @@ sales <- read_parquet("gold/daily_sales_by_region/") %>%
 arrow::write_parquet(sales, "report_input/sales_for_pbi.parquet")</code></pre>
     </div>
 
+    <h3>Import vs. DirectQuery: when to use which</h3>
+    <div class="step-box">
+        <table>
+            <tr><th>Mode</th><th>How it works</th><th>When to use</th></tr>
+            <tr><td><strong>Import</strong></td><td>Data is copied into the Power BI model at refresh. All queries run against the in-memory model.</td><td>Gold/mart fits in memory; you want fastest interactivity and can refresh on a schedule (e.g. daily).</td></tr>
+            <tr><td><strong>DirectQuery</strong></td><td>No copy; each visual or interaction sends a query to the source (e.g. Snowflake, SQL Server).</td><td>Data is too large to import, or must be near real-time. Trade-off: slower visuals, dependency on source availability.</td></tr>
+        </table>
+    </div>
+    <p>For NorthStar-style Gold tables (aggregated daily by product/region), <strong>Import</strong> is usually best: small footprint, fast reports, refresh when the pipeline has updated Gold.</p>
+
     <h3>Practical use cases</h3>
     <div class="example-box">
         <ul>
-            <li>Sales report: revenue, units, growth %; filters by region, product, date.</li>
-            <li>Executive dashboard: KPIs, trend, top N; export to PDF.</li>
-            <li>Self-serve: parameterized report for “any region”.</li>
+            <li><strong>Sales report:</strong> Revenue, units, growth %; filters by region, product, date; matrix by product × region; export to PDF.</li>
+            <li><strong>Executive dashboard:</strong> KPI cards (Total Revenue, YoY %), bar chart Revenue by Region, line chart trend; bookmarks for “monthly view” vs “quarterly view”.</li>
+            <li><strong>Self-serve:</strong> Slicers for region and date; drill-through from region bar to a detail page showing product breakdown for that region.</li>
+            <li><strong>Governed release:</strong> RLS so regional managers see only their region; same report, different data per role.</li>
         </ul>
     </div>
 
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
-            <li>Data model: star schema (fact + dimensions); measures in DAX; visuals and filters (visual, page, report).</li>
-            <li>DAX: time intelligence (YTD, prior period), ratios; use aggregations and RLS for performance and security.</li>
+            <li>Power BI fits pipeline Gold/mart: star schema (fact + dimensions), measures in DAX, filter context from relationships and slicers.</li>
+            <li>Power Query (M) loads and shapes data before the model; use it for types, filters, and calculated columns at refresh.</li>
+            <li>DAX: base measures (SUM, DIVIDE), time intelligence (YTD, same period last year), CALCULATE and ALL for % of total; RLS with table filters per role.</li>
+            <li>Same dummy data drives KPI cards, bar charts by region, matrix by product × region; one model, many visuals.</li>
+            <li>Import for speed and scheduled refresh; DirectQuery for large or live data. Use aggregations and RLS for performance and security.</li>
         </ul>
     </div>
 

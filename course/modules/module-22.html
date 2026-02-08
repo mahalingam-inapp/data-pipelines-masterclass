@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Module 22: Roadmap & Next Steps</title>
+    <title>Module 22: Layered Pipeline View</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9f9; padding: 20px; color: #444; line-height: 1.6; }
         h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 16px; }
@@ -12,83 +12,465 @@
         .example-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
         .step-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin: 16px 0; }
         .info-box { background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin: 16px 0; }
-        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 16px 0; }
-        .quiz-section { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 24px; margin-top: 24px; }
-        .quiz-question { background: #f8f9fa; border-left: 4px solid #764ba2; padding: 16px; margin: 12px 0; border-radius: 4px; }
-        .quiz-options { list-style: none; padding-left: 0; }
-        .quiz-options li { background: white; border: 1px solid #ddd; padding: 10px; margin: 6px 0; border-radius: 6px; }
-        .quiz-answer { display: none; border-left: 4px solid #28a745; padding: 12px; margin-top: 8px; background: #d4edda; border-radius: 4px; }
-        .quiz-answer.show { display: block; }
-        .show-answer-btn { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
-        .show-answer-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #6c757d; }
+        .layer-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .layer-card h4 { color: #667eea; margin: 0 0 8px 0; font-size: 1.15em; }
+        .layer-desc { color: #666; font-size: 0.95em; margin-bottom: 14px; }
+        .layer-controls { margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .layer-controls label { font-weight: 600; color: #555; }
+        .layer-controls select {
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: white;
+            min-width: 220px;
+        }
+        .view-panel {
+            display: none;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+        .view-panel.active { display: block; }
+        .view-panel h5 { margin: 0 0 8px 0; color: #764ba2; font-size: 1em; }
+        .view-panel ul { margin: 8px 0 0 18px; padding: 0; }
+        .view-panel li { margin: 4px 0; }
+        .view-panel p { margin: 0; }
+        .diagram-box { background: #f0f7ff; border: 1px solid #667eea; border-radius: 8px; padding: 16px; margin: 12px 0; font-size: 0.95em; }
+        .key-takeaways { background: #f8f9fa; border-radius: 8px; padding: 16px; margin: 20px 0; }
+        .key-takeaways h4 { color: #667eea; margin-top: 0; }
     </style>
 </head>
 <body>
-    <h2>Module 22: Roadmap & Next Steps</h2>
+    <h2>Module 22: Layered Pipeline View</h2>
     <div class="plain-terms">
-        <strong>In plain terms:</strong> You’ve covered the full pipeline lifecycle. Next steps depend on your role and goals: go deeper on <strong>streaming</strong>, <strong>ML pipelines</strong>, <strong>data mesh</strong>, or tool-specific certifications. Use self-assessment and resource-sharing to pick one area to deepen. No vendor or product endorsement — generic guidance only.
+        <strong>In plain terms:</strong> This page shows one continuous pipeline from <strong>data source to business consumption</strong>. Each layer has a dropdown: choose <strong>Business user</strong>, <strong>Data Architect (AWS)</strong>, or <strong>Data Architect (Azure)</strong> to see how that layer looks from that perspective—outcomes and trust (business), or concrete services and patterns (AWS/Azure).
     </div>
-    <h3>Where to go next</h3>
-    <ul>
-        <li><strong>Streaming</strong> — Real-time ingestion and processing (event streams, windowing, exactly-once).</li>
-        <li><strong>ML pipelines</strong> — Feature stores, training pipelines, model deployment and monitoring.</li>
-        <li><strong>Data mesh</strong> — Domain-oriented ownership, product thinking, federated governance.</li>
-        <li><strong>Tooling</strong> — Deeper dbt, orchestration (e.g. Airflow), cloud data services, or BI certifications.</li>
-    </ul>
-    <h3>Self-assessment</h3>
-    <div class="step-box">
-        <p>Rate your confidence (1–5) on: <strong>ingestion</strong>, <strong>ETL</strong>, <strong>storage</strong>, <strong>analytics</strong>. Identify one area to deepen and one resource (course, book, doc) to use next.</p>
+
+    <p style="margin-bottom: 24px;">Use the dropdown on each layer to switch the illustration between a <strong>Business user</strong> view (what you see and care about), <strong>Data Architect (AWS)</strong> (services like S3, Glue, Redshift, QuickSight), and <strong>Data Architect (Azure)</strong> (ADLS, Data Factory, Synapse, Power BI).</p>
+
+    <!-- Layer 1: Data sources -->
+    <div class="layer-card" data-layer="1">
+        <h4>1. Data sources</h4>
+        <p class="layer-desc">Where data originates: databases, files, APIs, event streams.</p>
+        <div class="layer-controls">
+            <label for="view-1">View as:</label>
+            <select id="view-1" class="layer-view" aria-label="View layer 1 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-1-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Where our data comes from: CRM, sales systems, spreadsheets, and APIs. I care that the right data is available when I need it and that I can trace numbers back to a trusted source.</p>
+        </div>
+        <div id="panel-1-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <p>Sources and discovery:</p>
+            <ul>
+                <li><strong>S3</strong> (files, data lake landing), <strong>RDS</strong> / Aurora (relational), <strong>DynamoDB</strong></li>
+                <li><strong>API Gateway</strong> + Lambda for REST; <strong>Kinesis</strong> / EventBridge for events</li>
+                <li><strong>DMS</strong> (Database Migration Service) for CDC; <strong>Glue crawlers</strong> for catalog discovery</li>
+            </ul>
+        </div>
+        <div id="panel-1-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <p>Sources and discovery:</p>
+            <ul>
+                <li><strong>ADLS Gen2</strong> (files, lake landing), <strong>Azure SQL</strong>, <strong>Cosmos DB</strong></li>
+                <li><strong>Event Hubs</strong> / Event Grid for events; REST APIs via <strong>Data Factory</strong> or Logic Apps</li>
+                <li><strong>Data Factory</strong> linked services; <strong>Synapse Link</strong> for operational DBs</li>
+            </ul>
+        </div>
     </div>
-    <h3>Resource share</h3>
-    <p>Each participant can post one resource (course, book, tool doc) for the group. Build a short list the team can refer to after the masterclass.</p>
+
+    <!-- Layer 2: Ingestion & Landing -->
+    <div class="layer-card" data-layer="2">
+        <h4>2. Ingestion &amp; Landing</h4>
+        <p class="layer-desc">Moving data into a landing zone (batch or streaming); raw, as-received.</p>
+        <div class="layer-controls">
+            <label for="view-2">View as:</label>
+            <select id="view-2" class="layer-view" aria-label="View layer 2 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-2-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Data is brought in on a schedule or in real time. I expect it to be available for processing without manual steps, and I rely on the team to handle failures and retries.</p>
+        </div>
+        <div id="panel-2-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>S3</strong> landing bucket (prefixes by source/date); <strong>Glue</strong> jobs or Lambda for batch</li>
+                <li><strong>Kinesis Data Firehose</strong> for streaming to S3; <strong>DMS</strong> for DB replication</li>
+                <li>Idempotent writes; backoff and DLQ for failed records</li>
+            </ul>
+        </div>
+        <div id="panel-2-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>ADLS Gen2</strong> landing container (folders by source/date); <strong>Data Factory</strong> copy activities</li>
+                <li><strong>Event Hubs</strong> + Stream Analytics or <strong>Event Grid</strong> for events</li>
+                <li>Idempotent pipelines; retry and dead-letter handling</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 3: Bronze -->
+    <div class="layer-card" data-layer="3">
+        <h4>3. Bronze (raw)</h4>
+        <p class="layer-desc">Immutable raw copy of source data; audit trail and reprocess capability.</p>
+        <div class="layer-controls">
+            <label for="view-3">View as:</label>
+            <select id="view-3" class="layer-view" aria-label="View layer 3 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-3-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Raw copy of source data, unchanged. This gives us an audit trail and the ability to reprocess if we find a mistake downstream—I don’t use this layer directly, but I benefit from it.</p>
+        </div>
+        <div id="panel-3-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>S3</strong> raw zone (e.g. <code>s3://bucket/raw/</code>); <strong>Glue</strong> Data Catalog</li>
+                <li>Parquet or JSON as landed; partition by date/source; schema-on-read</li>
+            </ul>
+        </div>
+        <div id="panel-3-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>ADLS</strong> bronze container; raw format (Parquet/JSON); <strong>Delta Lake</strong> bronze tables optional</li>
+                <li>Partition by date/source; catalog in Synapse or Purview</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 4: Staging -->
+    <div class="layer-card" data-layer="4">
+        <h4>4. Staging</h4>
+        <p class="layer-desc">Temporary area used as input to validation and cleaning; not for long-term querying.</p>
+        <div class="layer-controls">
+            <label for="view-4">View as:</label>
+            <select id="view-4" class="layer-view" aria-label="View layer 4 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-4-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Temporary area where data is prepared for validation. I don’t interact with this directly—it’s an engineering step so that only valid data moves into the layers I use.</p>
+        </div>
+        <div id="panel-4-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>S3</strong> staging prefix or ephemeral <strong>Glue</strong> temporary tables; Spark staging DataFrames</li>
+                <li>Used as input to validation job before writing to Silver</li>
+            </ul>
+        </div>
+        <div id="panel-4-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>ADLS</strong> staging folder or <strong>Data Factory</strong> staging datasets; <strong>Synapse</strong> staging tables</li>
+                <li>Input to validation data flow or notebook before Silver</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 5: Validation & Quarantine -->
+    <div class="layer-card" data-layer="5">
+        <h4>5. Validation &amp; Quarantine</h4>
+        <p class="layer-desc">Rules (schema, completeness, referential); fail path to quarantine; alerts.</p>
+        <div class="layer-controls">
+            <label for="view-5">View as:</label>
+            <select id="view-5" class="layer-view" aria-label="View layer 5 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-5-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Bad or incomplete data is caught and set aside so reports stay accurate. I might get alerts when something fails so I know not to trust a report until it’s fixed.</p>
+        </div>
+        <div id="panel-5-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>Glue</strong> jobs with validation logic; <strong>S3</strong> quarantine bucket for failed records</li>
+                <li><strong>CloudWatch</strong> alarms; <strong>Step Functions</strong> or Lambda for fail-path and notifications</li>
+            </ul>
+        </div>
+        <div id="panel-5-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>Data Factory</strong> validation activities or <strong>Synapse</strong> notebooks; <strong>ADLS</strong> quarantine container</li>
+                <li><strong>Azure Monitor</strong> alerts; <strong>Logic Apps</strong> or Functions for fail-path and notifications</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 6: Silver -->
+    <div class="layer-card" data-layer="6">
+        <h4>6. Silver (clean, conformed)</h4>
+        <p class="layer-desc">Cleaned, deduplicated, conformed schema; joined where needed; single source for analytics.</p>
+        <div class="layer-controls">
+            <label for="view-6">View as:</label>
+            <select id="view-6" class="layer-view" aria-label="View layer 6 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-6-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Cleaned, deduplicated, and joined data. This is the layer my reports and datasets are built from—I expect consistent definitions and one version of the truth.</p>
+        </div>
+        <div id="panel-6-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>S3</strong> silver zone; <strong>Glue</strong> ETL (Spark) for clean, dedup, conform; <strong>Athena</strong> views or <strong>Redshift</strong> staging</li>
+                <li>Delta/Parquet; partition by business key or date</li>
+            </ul>
+        </div>
+        <div id="panel-6-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>ADLS</strong> silver container; <strong>Synapse</strong> Spark or dedicated SQL; <strong>Data Factory</strong> data flows; <strong>Delta Lake</strong> silver</li>
+                <li>Conformed dimensions and facts; partition by key/date</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 7: Gold -->
+    <div class="layer-card" data-layer="7">
+        <h4>7. Gold (aggregates, marts)</h4>
+        <p class="layer-desc">Business-level aggregates, KPIs, and mart tables for reporting and self-serve.</p>
+        <div class="layer-controls">
+            <label for="view-7">View as:</label>
+            <select id="view-7" class="layer-view" aria-label="View layer 7 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-7-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Ready-to-use aggregates, KPIs, and mart tables. This is what powers my dashboards and self-serve analytics—I filter, slice, and export from here.</p>
+        </div>
+        <div id="panel-7-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>S3</strong> gold/curated zone; <strong>Redshift</strong> schemas (marts); <strong>Athena</strong> curated views; <strong>Glue</strong> catalog</li>
+                <li>Aggregations and star/snowflake marts; incremental where applicable</li>
+            </ul>
+        </div>
+        <div id="panel-7-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>ADLS</strong> gold container; <strong>Synapse</strong> dedicated SQL pool (marts); <strong>Datamarts</strong>; <strong>Power BI</strong> datasets</li>
+                <li>Aggregations and marts; incremental refresh</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 8: Quality checks -->
+    <div class="layer-card" data-layer="8">
+        <h4>8. Quality checks</h4>
+        <p class="layer-desc">Uniqueness, completeness, freshness, consistency; monitoring and alerting.</p>
+        <div class="layer-controls">
+            <label for="view-8">View as:</label>
+            <select id="view-8" class="layer-view" aria-label="View layer 8 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-8-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Checks that data is complete, fresh, and consistent. I rely on these to trust the numbers and to know when something is wrong before I present to stakeholders.</p>
+        </div>
+        <div id="panel-8-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>Glue Data Quality</strong>, Deequ, or custom <strong>Lambda</strong>; <strong>CloudWatch</strong> metrics and dashboards</li>
+                <li>Rules on uniqueness, nulls, freshness; block or alert on failure</li>
+            </ul>
+        </div>
+        <div id="panel-8-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>Synapse</strong> data quality / notebook checks; <strong>Data Factory</strong> data quality rules; <strong>Purview</strong>; custom checks</li>
+                <li>Uniqueness, completeness, freshness; Azure Monitor alerts</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 9: Storage (Warehouse / Lake / Mart / Cube) -->
+    <div class="layer-card" data-layer="9">
+        <h4>9. Storage (Warehouse / Lake / Mart / Cube / Lakehouse)</h4>
+        <p class="layer-desc">Where refined data lives: warehouse for SQL, lake for flexibility, marts and cubes for analytics.</p>
+        <div class="layer-controls">
+            <label for="view-9">View as:</label>
+            <select id="view-9" class="layer-view" aria-label="View layer 9 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-9-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Where our refined data lives: data warehouse for queries, data marts for my team, and cubes for fast analysis. I care that I can get to the right dataset quickly and that it’s documented.</p>
+        </div>
+        <div id="panel-9-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>Redshift</strong> (warehouse); <strong>S3</strong> + <strong>Athena</strong> (lake); Redshift schemas (marts); <strong>QuickSight</strong> SPICE (cube-like)</li>
+                <li>Lakehouse: S3 + Glue + Athena + optional Redshift Spectrum</li>
+            </ul>
+        </div>
+        <div id="panel-9-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>Synapse</strong> dedicated SQL pool (warehouse); <strong>ADLS</strong> + Synapse (lake); <strong>Datamarts</strong>; <strong>Analysis Services</strong> (cube)</li>
+                <li>Lakehouse: ADLS + Synapse Spark + SQL pool + Delta</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 10: Curated dataset & Dictionary -->
+    <div class="layer-card" data-layer="10">
+        <h4>10. Curated dataset &amp; Dictionary</h4>
+        <p class="layer-desc">Documented datasets, business terms, and lineage so consumers can find and trust data.</p>
+        <div class="layer-controls">
+            <label for="view-10">View as:</label>
+            <select id="view-10" class="layer-view" aria-label="View layer 10 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-10-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Documented datasets and business terms so I can find and understand what to use for each report. I use the data dictionary to know what a column means and where it came from.</p>
+        </div>
+        <div id="panel-10-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>Glue Data Catalog</strong>; <strong>Lake Formation</strong>; <strong>QuickSight</strong> dataset definitions; tags and custom metadata</li>
+            </ul>
+        </div>
+        <div id="panel-10-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>Purview</strong> catalog; <strong>Synapse</strong> data dictionary; <strong>Power BI</strong> datasets and semantic model; data catalog</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 11: Analytics & Report -->
+    <div class="layer-card" data-layer="11">
+        <h4>11. Analytics &amp; Report</h4>
+        <p class="layer-desc">Reports, dashboards, ad hoc query; Power BI, Tableau, or platform-native BI.</p>
+        <div class="layer-controls">
+            <label for="view-11">View as:</label>
+            <select id="view-11" class="layer-view" aria-label="View layer 11 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-11-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>Reports and dashboards I use every day: sales, operations, KPIs. I filter, drill down, and export. I care that they’re accurate, fast, and match the agreed definitions.</p>
+        </div>
+        <div id="panel-11-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>QuickSight</strong> dashboards and analyses; <strong>Athena</strong> ad hoc; <strong>Redshift</strong> query and reporting integrations</li>
+            </ul>
+        </div>
+        <div id="panel-11-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>Power BI</strong> reports and dashboards; <strong>Synapse</strong> reports; Paginated reports; Excel connect</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Layer 12: Business consumption -->
+    <div class="layer-card" data-layer="12">
+        <h4>12. Business consumption</h4>
+        <p class="layer-desc">Decision-making, sharing with stakeholders, exports, and downstream apps.</p>
+        <div class="layer-controls">
+            <label for="view-12">View as:</label>
+            <select id="view-12" class="layer-view" aria-label="View layer 12 as">
+                <option value="business">Business user</option>
+                <option value="aws">Data Architect (AWS)</option>
+                <option value="azure">Data Architect (Azure)</option>
+            </select>
+        </div>
+        <div id="panel-12-business" class="view-panel active" data-view="business">
+            <h5>Business user</h5>
+            <p>I use the reports to make decisions, share with stakeholders, and run the business. I care about accuracy, timeliness, and being able to explain where the numbers came from.</p>
+        </div>
+        <div id="panel-12-aws" class="view-panel" data-view="aws">
+            <h5>Data Architect (AWS)</h5>
+            <ul>
+                <li><strong>QuickSight</strong> sharing and embedding; <strong>Redshift</strong> query access; <strong>S3</strong> exports for downstream systems; API/BI integrations</li>
+            </ul>
+        </div>
+        <div id="panel-12-azure" class="view-panel" data-view="azure">
+            <h5>Data Architect (Azure)</h5>
+            <ul>
+                <li><strong>Power BI</strong> workspaces and apps; export to Excel; <strong>Synapse</strong> or APIs for downstream apps; embedding and sharing</li>
+            </ul>
+        </div>
+    </div>
 
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
-            <li>Next areas: streaming, ML pipelines, data mesh, or tool certifications—pick one to deepen.</li>
-            <li>Self-assessment: rate confidence on ingestion, ETL, storage, analytics; identify one resource.</li>
-            <li>Resource share: build a short list the team can refer to after the masterclass.</li>
+            <li>The pipeline flows from <strong>sources → landing → Bronze → staging → validation &amp; quarantine → Silver → Gold → quality checks → storage → curated dataset → analytics → business consumption</strong>.</li>
+            <li>Each layer can be viewed as a <strong>Business user</strong> (outcomes, trust), <strong>Data Architect (AWS)</strong> (S3, Glue, Redshift, QuickSight, etc.), or <strong>Data Architect (Azure)</strong> (ADLS, Data Factory, Synapse, Power BI, etc.).</li>
+            <li>Use the dropdowns to compare how the same layer is implemented and consumed across roles and platforms.</li>
         </ul>
     </div>
 
-    <div class="success-box">
-        <strong>You’ve completed the Data Pipelines Masterclass.</strong> Use the course plan (COURSE-PLAN.md) and role-specific appendix for ongoing reference and to run sessions with your team.
-    </div>
-    <div class="info-box"><strong>Relationship to other modules:</strong> This is the final module. Revisit any section (1–7) for deeper practice or use the capstone (Module 20) and simulation (Module 21) as templates for team exercises.</div>
-    <div class="quiz-section">
-        <h3>Module Quiz</h3>
-        <div class="quiz-question">
-            <h4>Q1: What is a good next step after this masterclass?</h4>
-            <ul class="quiz-options"><li>A) Stop learning</li><li>B) Pick one area to deepen: streaming, ML pipelines, data mesh, or tool certifications</li></ul>
-            <button class="show-answer-btn" id="btn-1" onclick="showAnswer(1)">Show Answer</button>
-            <div class="quiz-answer" id="answer-1"><strong>Correct: B.</strong> Focused deepening beats scattered learning.</div>
-        </div>
-        <div class="quiz-question">
-            <h4>Q2: What does "data mesh" emphasize?</h4>
-            <ul class="quiz-options"><li>A) Single central team only</li><li>B) Domain-oriented ownership, product thinking, federated governance</li></ul>
-            <button class="show-answer-btn" id="btn-2" onclick="showAnswer(2)">Show Answer</button>
-            <div class="quiz-answer" id="answer-2"><strong>Correct: B.</strong> Data mesh distributes ownership by domain.</div>
-        </div>
-        <div class="quiz-question">
-            <h4>Q3: What should self-assessment cover?</h4>
-            <ul class="quiz-options"><li>A) Only one topic</li><li>B) Confidence on ingestion, ETL, storage, analytics; one area to deepen and one resource</li></ul>
-            <button class="show-answer-btn" id="btn-3" onclick="showAnswer(3)">Show Answer</button>
-            <div class="quiz-answer" id="answer-3"><strong>Correct: B.</strong> Self-assessment guides next learning steps.</div>
-        </div>
-        <div class="quiz-question">
-            <h4>Q4: What does "streaming" as a next step include?</h4>
-            <ul class="quiz-options"><li>A) Only batch</li><li>B) Real-time ingestion, event streams, windowing, exactly-once semantics</li></ul>
-            <button class="show-answer-btn" id="btn-4" onclick="showAnswer(4)">Show Answer</button>
-            <div class="quiz-answer" id="answer-4"><strong>Correct: B.</strong> Streaming extends pipelines to real-time.</div>
-        </div>
-        <div class="quiz-question">
-            <h4>Q5: How can you use the course after completion?</h4>
-            <ul class="quiz-options"><li>A) Only once</li><li>B) Use COURSE-PLAN.md and role appendix for reference; run sessions with your team; reuse capstone and simulation as templates</li></ul>
-            <button class="show-answer-btn" id="btn-5" onclick="showAnswer(5)">Show Answer</button>
-            <div class="quiz-answer" id="answer-5"><strong>Correct: B.</strong> The course is a reusable reference and team resource.</div>
-        </div>
-    </div>
-    <script>function showAnswer(n){var a=document.getElementById('answer-'+n),b=document.getElementById('btn-'+n);if(a&&b){a.classList.add('show');b.disabled=true;b.textContent='Answer Revealed';}}</script>
-<script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
+    <div class="info-box"><strong>Relationship to other modules:</strong> This view ties together ingestion (4–6), ETL and medallion (7–9), validation and quality (10–12), storage (13–15), and analytics (16–19). Use it with the capstone (Module 20) and simulation (Module 21). Next: Module 23 — Roadmap &amp; Next Steps.</div>
+
+    <script>
+        (function() {
+            function updateLayerView(layerId, value) {
+                var card = document.querySelector('.layer-card[data-layer="' + layerId + '"]');
+                if (!card) return;
+                var panels = card.querySelectorAll('.view-panel');
+                panels.forEach(function(p) {
+                    p.classList.toggle('active', p.getAttribute('data-view') === value);
+                });
+            }
+            document.querySelectorAll('.layer-view').forEach(function(sel) {
+                sel.addEventListener('change', function() {
+                    var layerId = this.id.replace('view-', '');
+                    updateLayerView(layerId, this.value);
+                });
+            });
+        })();
+    </script>
+    <script>(function(){function sendHeight(){try{var body=document.body,html=document.documentElement;var h=Math.max(body.scrollHeight,body.offsetHeight,html.scrollHeight,html.offsetHeight,html.clientHeight||0);if(h<=0)return;var path=window.location.pathname||window.location.href||'';var m=path.match(/module-(\d+)\.html/);if(m)window.parent.postMessage({type:'setIframeHeight',height:h,moduleId:parseInt(m[1],10)},'*');}catch(e){}}sendHeight();setTimeout(sendHeight,100);setTimeout(sendHeight,400);setTimeout(sendHeight,1000);})();</script>
 </body>
 </html>

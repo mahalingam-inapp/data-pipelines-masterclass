@@ -56,6 +56,22 @@
     <p><strong>Current state:</strong> Each week, three CSV files are produced—sales (transactions), returns (refunds or send-backs), and inventory (stock levels). These may come from different systems (e.g. POS, e-commerce, warehouse) or manual exports. Someone (often an analyst) opens them in Excel, aligns column names and formats, handles missing values, and joins them on common keys (e.g. product ID, date, store). The result is used for weekly reports. Problems: the process is manual and error-prone; if someone is out, the merge may be delayed; definitions can drift (e.g. "return" might be defined differently in different files).</p>
     <p><strong>Target state:</strong> One pipeline that (1) reads the three CSVs from a designated folder (landing zone), (2) cleans and standardizes them, (3) joins them on agreed keys, and (4) writes one consolidated table or file for reporting. The pipeline runs on a schedule (e.g. every Monday) or on demand. Output is in a shared location or database so that reports always point to the same dataset. Ownership is clear (who fixes the pipeline if it fails?), and the "before vs. after" story can be documented for stakeholders.</p>
 
+    <h3>Business value of automating this flow</h3>
+    <p>Moving from manual Excel merges to a pipeline is not only a technical change—it creates measurable business value. The table below summarizes typical benefits that stakeholders care about when you present the "before vs. after" story.</p>
+    <table style="margin: 16px 0; border-collapse: collapse; width: 100%;">
+        <thead>
+            <tr style="background: #667eea; color: white;"><th style="padding: 10px; text-align: left;">Value</th><th style="padding: 10px; text-align: left;">What it means</th></tr>
+        </thead>
+        <tbody>
+            <tr style="background: #f8f9fa;"><td style="padding: 10px; border: 1px solid #e0e0e0;"><strong>Time saved</strong></td><td style="padding: 10px; border: 1px solid #e0e0e0;">Hours per week no longer spent copying, aligning, and joining files by hand. That time can go into analysis and decisions instead of data prep.</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #e0e0e0;"><strong>Fewer errors</strong></td><td style="padding: 10px; border: 1px solid #e0e0e0;">Manual merges introduce mistakes (wrong key, wrong sheet, copy-paste errors). A repeatable pipeline applies the same rules every time and reduces the cost of correcting wrong reports.</td></tr>
+            <tr style="background: #f8f9fa;"><td style="padding: 10px; border: 1px solid #e0e0e0;"><strong>Single source of truth</strong></td><td style="padding: 10px; border: 1px solid #e0e0e0;">Everyone reports from the same consolidated output. No "your numbers vs. my numbers"—leadership can trust one dataset for weekly reviews and planning.</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #e0e0e0;"><strong>Faster, consistent reporting</strong></td><td style="padding: 10px; border: 1px solid #e0e0e0;">Reports are ready on schedule (e.g. Monday 8 a.m.) and definitions (e.g. "return", "units sold") are documented in the pipeline instead of varying by person.</td></tr>
+            <tr style="background: #f8f9fa;"><td style="padding: 10px; border: 1px solid #e0e0e0;"><strong>Audit and compliance</strong></td><td style="padding: 10px; border: 1px solid #e0e0e0;">You can trace where numbers came from (which files, which run). That supports auditability and makes it easier to explain or fix issues when questions arise.</td></tr>
+        </tbody>
+    </table>
+    <p>When you present the pipeline diagram and before vs. after narrative, tie them to one or two of these values (e.g. "We save 4 hours per week and eliminate the duplicate-count issue we had last quarter") so the business case is clear.</p>
+
     <div class="diagram-box">
         <div class="diagram-title">Use case: From 3 CSVs to one dataset</div>
         <svg viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
@@ -123,7 +139,35 @@ write_csv(merged, "output/consolidated.csv")</code></pre>
     <div class="demo-box">
         <details>
             <summary>Try it: Fill in the one-page diagram template</summary>
-            <p>Draw (on paper or a board): (1) Three boxes for the three CSVs. (2) One box "Ingest" with an arrow from each CSV. (3) Boxes "Clean" and "Join" with arrows. (4) One box "Output" with label "consolidated table". Add one sentence under "Join": which keys? (e.g. product_id, date.) Add one sentence under "Output": where does the report read from?</p>
+            <p><strong>Your task:</strong> Draw (on paper or a board): (1) Three boxes for the three CSVs. (2) One box "Ingest" with an arrow from each CSV. (3) Boxes "Clean" and "Join" with arrows. (4) One box "Output" with label "consolidated table". Add one sentence under "Join": which keys? (e.g. product_id, date.) Add one sentence under "Output": where does the report read from?</p>
+            <p style="margin-top: 14px;"><strong>Sample output (example of a filled-in answer):</strong></p>
+            <p style="margin: 8px 0 4px 0; font-size: 0.95em; color: #764ba2;"><strong>Pipeline diagram</strong></p>
+            <svg viewBox="0 0 560 155" xmlns="http://www.w3.org/2000/svg" style="max-width:100%; height: auto; display: block; margin: 10px 0;">
+                <defs><marker id="arr3sample" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#667eea"/></marker></defs>
+                <rect x="10" y="18" width="70" height="30" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="45" y="35" text-anchor="middle" font-size="10">sales.csv</text>
+                <rect x="10" y="52" width="70" height="30" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="45" y="69" text-anchor="middle" font-size="10">returns.csv</text>
+                <rect x="10" y="86" width="70" height="30" rx="4" fill="#fff3cd" stroke="#ffc107"/><text x="45" y="103" text-anchor="middle" font-size="10">inventory.csv</text>
+                <line x1="80" y1="48" x2="112" y2="48" stroke="#667eea" marker-end="url(#arr3sample)"/>
+                <line x1="80" y1="67" x2="112" y2="67" stroke="#667eea" marker-end="url(#arr3sample)"/>
+                <line x1="80" y1="101" x2="112" y2="101" stroke="#667eea" marker-end="url(#arr3sample)"/>
+                <rect x="112" y="33" width="78" height="48" rx="6" fill="#e8f0ff" stroke="#667eea"/><text x="151" y="55" text-anchor="middle" font-size="11" font-weight="bold">Ingest</text><text x="151" y="70" text-anchor="middle" font-size="9" fill="#555">Read 3 CSVs from landing/</text>
+                <line x1="190" y1="57" x2="225" y2="57" stroke="#667eea" marker-end="url(#arr3sample)"/>
+                <rect x="225" y="33" width="78" height="48" rx="6" fill="#e8f0ff" stroke="#667eea"/><text x="264" y="55" text-anchor="middle" font-size="11" font-weight="bold">Clean</text><text x="264" y="70" text-anchor="middle" font-size="9" fill="#555">Types, nulls, dedup</text>
+                <line x1="303" y1="57" x2="338" y2="57" stroke="#667eea" marker-end="url(#arr3sample)"/>
+                <rect x="338" y="33" width="78" height="48" rx="6" fill="#e8f0ff" stroke="#667eea"/><text x="377" y="55" text-anchor="middle" font-size="11" font-weight="bold">Join</text><text x="377" y="70" text-anchor="middle" font-size="9" fill="#555">Keys: product_id, date</text>
+                <line x1="416" y1="57" x2="451" y2="57" stroke="#667eea" marker-end="url(#arr3sample)"/>
+                <rect x="451" y="33" width="98" height="48" rx="6" fill="#d4edda" stroke="#28a745"/><text x="500" y="52" text-anchor="middle" font-size="11" font-weight="bold">Output</text><text x="500" y="66" text-anchor="middle" font-size="8" fill="#155724">consolidated_weekly.csv</text><text x="500" y="78" text-anchor="middle" font-size="8" fill="#155724">Report reads here · Mon 6am</text>
+                <text x="151" y="95" text-anchor="middle" font-size="8" fill="#666">landing folder</text>
+                <text x="377" y="95" text-anchor="middle" font-size="8" fill="#666">Left join, 1 row per product per day</text>
+                <text x="500" y="105" text-anchor="middle" font-size="8" fill="#666">reporting.consolidated or file</text>
+            </svg>
+            <div class="step-box" style="margin-top: 12px;">
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li><strong>Under Join:</strong> "Join on <code>product_id</code> and <code>date</code> so we get one row per product per day with units_sold, units_returned, and stock_qty. Left join so we keep all product-dates from sales even if there are no returns or inventory for that day."</li>
+                    <li><strong>Under Output:</strong> "Report reads from <code>output/consolidated_weekly.csv</code> (or table <code>reporting.consolidated</code>). Updated every Monday 6 a.m. after the pipeline runs."</li>
+                </ul>
+                <p style="margin: 12px 0 0 0; font-size: 0.95em; color: #555;">Use this as a reference when you draw your own; your keys and paths may differ (e.g. store_id in the join, or a different output path).</p>
+            </div>
         </details>
     </div>
 
@@ -150,6 +194,7 @@ write_csv(merged, "output/consolidated.csv")</code></pre>
     <div class="key-takeaways">
         <h4>Key Takeaways</h4>
         <ul>
+            <li>Business value: time saved, fewer errors, single source of truth, faster reporting, and auditability—tie these to your before vs. after story when presenting to stakeholders.</li>
             <li>Replace manual Excel merge with ingest → clean → join → output; one run, one dataset.</li>
             <li>Clean step: standardize names, types, nulls, duplicates; join on agreed keys (e.g. product_id, date).</li>
             <li>Produce a one-page diagram and a before vs. after narrative for stakeholders.</li>
